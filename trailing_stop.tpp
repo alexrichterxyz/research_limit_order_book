@@ -1,13 +1,13 @@
 #include "book.hpp"
 #include <cmath>
 
-lob::trailing_stop_controller::trailing_stop_controller(const side t_side,
-    const double t_price, const lob::offset_type t_offset_type,
-    const double t_offset, lob::trigger &t_trailing_stop)
+elob::trailing_stop_controller::trailing_stop_controller(const side t_side,
+    const double t_price, const elob::offset_type t_offset_type,
+    const double t_offset, elob::trigger &t_trailing_stop)
     : trigger(t_side, t_price), m_offset_type(t_offset_type),
       m_offset(t_offset), m_trailing_stop(t_trailing_stop) {}
 
-void lob::trailing_stop_controller::on_triggered() {
+void elob::trailing_stop_controller::on_triggered() {
 	const double market_price = get_book()->get_market_price();
 	double new_price = 0.0;
 	double new_stop_price = 0.0;
@@ -15,7 +15,7 @@ void lob::trailing_stop_controller::on_triggered() {
 	if (get_side() == side::ask) {
 		new_price = std::nextafter(market_price, max_price);
 
-		if (m_offset_type == lob::offset_type::abs) {
+		if (m_offset_type == elob::offset_type::abs) {
 			new_stop_price = market_price - m_offset;
 		} else {
 			new_stop_price = market_price * (1 - m_offset);
@@ -26,7 +26,7 @@ void lob::trailing_stop_controller::on_triggered() {
 	} else {
 		new_price = std::nextafter(market_price, min_price);
 
-		if (m_offset_type == lob::offset_type::abs) {
+		if (m_offset_type == elob::offset_type::abs) {
 			new_stop_price = market_price + m_offset;
 		} else {
 			new_stop_price = market_price * (1 + m_offset);
@@ -41,19 +41,19 @@ void lob::trailing_stop_controller::on_triggered() {
 }
 
 template <class order_t>
-lob::trailing_stop<order_t>::trailing_stop(const lob::side t_side,
-    const double t_price, const lob::offset_type t_offset_type,
-    const double t_offset, std::shared_ptr<lob::order> t_order)
-    : lob::trigger(t_side, t_price), m_offset_type(t_offset_type),
+elob::trailing_stop<order_t>::trailing_stop(const elob::side t_side,
+    const double t_price, const elob::offset_type t_offset_type,
+    const double t_offset, std::shared_ptr<elob::order> t_order)
+    : elob::trigger(t_side, t_price), m_offset_type(t_offset_type),
       m_offset(t_offset), m_order(t_order) {}
 
-template <class order_t> void lob::trailing_stop<order_t>::on_triggered() {
+template <class order_t> void elob::trailing_stop<order_t>::on_triggered() {
 	get_book()->insert(m_order);
 	m_trailing_stop_controller->cancel();
 	std::cout << "Triggered trailing stop order\n";
 }
 
-template <class order_t> void lob::trailing_stop<order_t>::on_queued() {
+template <class order_t> void elob::trailing_stop<order_t>::on_queued() {
 	if (initialized) {
 		return;
 	}
@@ -66,14 +66,14 @@ template <class order_t> void lob::trailing_stop<order_t>::on_queued() {
 	// if trailing stop gets triggered on price falls,
 	// then it will get updated on price rises and vice versa.
 	// Thus, the controller is on the opposite side of the book
-	lob::side controller_side = lob::side::bid;
+	elob::side controller_side = elob::side::bid;
 	double controller_price = 0.0;
 
-	if (get_side() == lob::side::bid) {
-		controller_side = lob::side::ask;
+	if (get_side() == elob::side::bid) {
+		controller_side = elob::side::ask;
 		controller_price = std::nextafter(market_price, max_price);
 	} else {
-		controller_side = lob::side::bid;
+		controller_side = elob::side::bid;
 		controller_price = std::nextafter(market_price, min_price);
 	}
 
@@ -83,7 +83,7 @@ template <class order_t> void lob::trailing_stop<order_t>::on_queued() {
 	get_book()->insert(m_trailing_stop_controller);
 }
 
-template <class order_t> void lob::trailing_stop<order_t>::on_canceled() {
+template <class order_t> void elob::trailing_stop<order_t>::on_canceled() {
 	initialized = false;
 	m_trailing_stop_controller->cancel();
 }

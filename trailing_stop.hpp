@@ -4,7 +4,7 @@
 #include "trigger.hpp"
 #include <memory>
 
-namespace lob {
+namespace elob {
 
 	template <class order_t> class trailing_stop : virtual public trigger {
 		private:
@@ -44,7 +44,7 @@ namespace lob {
 		    const double t_price, const offset_type t_offset_type,
 		    const double t_offset, trigger &t_trailing_stop_order);
 	};
-} // namespace lob
+} // namespace elob
 
 #endif // #ifndef TRAILING_STOP_HPP
 

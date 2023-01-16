@@ -3,7 +3,7 @@
 #include "trigger_limit.hpp"
 #include <iomanip>
 
-std::ostream &lob::operator<<(std::ostream &t_os, const lob::book &t_book) {
+std::ostream &elob::operator<<(std::ostream &t_os, const elob::book &t_book) {
 	std::size_t w = 12;
 	auto bid_it = t_book.m_bids.begin();
 	auto ask_it = t_book.m_asks.begin();
@@ -17,7 +17,7 @@ std::ostream &lob::operator<<(std::ostream &t_os, const lob::book &t_book) {
 	     << " │\n";
 
 	while (true) {
-		
+
 		if (bid_it == t_book.m_bids.end() &&
 		    ask_it == t_book.m_asks.end()) {
 			break;
@@ -51,7 +51,7 @@ std::ostream &lob::operator<<(std::ostream &t_os, const lob::book &t_book) {
 	return t_os;
 }
 
-void lob::book::insert(const std::shared_ptr<order> t_order) {
+void elob::book::insert(const std::shared_ptr<order> t_order) {
 	// check if order is valid
 	if (m_order_deferral_depth > 0) {
 		m_deferred.push(t_order);
@@ -74,7 +74,7 @@ void lob::book::insert(const std::shared_ptr<order> t_order) {
 	t_order->m_book = this;
 	t_order->on_accepted();
 
-	if (t_order->m_side == lob::side::bid) {
+	if (t_order->m_side == elob::side::bid) {
 		if (t_order->m_all_or_nothing) {
 			insert_aon_bid(t_order);
 		} else {
@@ -91,9 +91,9 @@ void lob::book::insert(const std::shared_ptr<order> t_order) {
 	end_order_deferral();
 }
 
-void lob::book::begin_order_deferral() { ++m_order_deferral_depth; }
+void elob::book::begin_order_deferral() { ++m_order_deferral_depth; }
 
-void lob::book::end_order_deferral() {
+void elob::book::end_order_deferral() {
 	if (--m_order_deferral_depth != 0) {
 		return;
 	}
@@ -105,7 +105,7 @@ void lob::book::end_order_deferral() {
 	}
 }
 
-void lob::book::insert(const std::shared_ptr<trigger> t_trigger) {
+void elob::book::insert(const std::shared_ptr<trigger> t_trigger) {
 	// check if order is valid
 	if (t_trigger->m_queued) {
 		return;
@@ -115,7 +115,7 @@ void lob::book::insert(const std::shared_ptr<trigger> t_trigger) {
 	t_trigger->m_book = this;
 	t_trigger->on_accepted();
 
-	if (t_trigger->m_side == lob::side::bid) {
+	if (t_trigger->m_side == elob::side::bid) {
 		if (t_trigger->m_price >= m_market_price &&
 		    m_market_price >= 0.0) { // prevent execution at start
 			t_trigger->on_triggered();
@@ -133,9 +133,10 @@ void lob::book::insert(const std::shared_ptr<trigger> t_trigger) {
 	}
 }
 
-void lob::book::queue_bid_trigger(const std::shared_ptr<trigger> &t_trigger) {
+void elob::book::queue_bid_trigger(const std::shared_ptr<trigger> &t_trigger) {
 	const auto limit_it =
-	    m_bid_triggers.emplace(t_trigger->m_price, lob::trigger_limit()).first;
+	    m_bid_triggers.emplace(t_trigger->m_price, elob::trigger_limit())
+		.first;
 	const auto trigger_it = limit_it->second.insert(t_trigger);
 	t_trigger->m_limit_it = limit_it;
 	t_trigger->m_trigger_it = trigger_it;
@@ -143,9 +144,10 @@ void lob::book::queue_bid_trigger(const std::shared_ptr<trigger> &t_trigger) {
 	t_trigger->on_queued();
 }
 
-void lob::book::queue_ask_trigger(const std::shared_ptr<trigger> &t_trigger) {
+void elob::book::queue_ask_trigger(const std::shared_ptr<trigger> &t_trigger) {
 	const auto limit_it =
-	    m_ask_triggers.emplace(t_trigger->m_price, lob::trigger_limit()).first;
+	    m_ask_triggers.emplace(t_trigger->m_price, elob::trigger_limit())
+		.first;
 	const auto trigger_it = limit_it->second.insert(t_trigger);
 	t_trigger->m_limit_it = limit_it;
 	t_trigger->m_trigger_it = trigger_it;
@@ -153,9 +155,9 @@ void lob::book::queue_ask_trigger(const std::shared_ptr<trigger> &t_trigger) {
 	t_trigger->on_queued();
 }
 
-void lob::book::queue_bid_order(const std::shared_ptr<order> &t_order) {
+void elob::book::queue_bid_order(const std::shared_ptr<order> &t_order) {
 	const auto limit_it =
-	    m_bids.emplace(t_order->m_price, lob::order_limit()).first;
+	    m_bids.emplace(t_order->m_price, elob::order_limit()).first;
 	const auto order_it = limit_it->second.insert(t_order);
 	t_order->m_limit_it = limit_it;
 	t_order->m_order_it = order_it;
@@ -166,9 +168,9 @@ void lob::book::queue_bid_order(const std::shared_ptr<order> &t_order) {
 	t_order->on_queued();
 }
 
-void lob::book::queue_ask_order(const std::shared_ptr<order> &t_order) {
+void elob::book::queue_ask_order(const std::shared_ptr<order> &t_order) {
 	const auto limit_it =
-	    m_asks.emplace(t_order->m_price, lob::order_limit()).first;
+	    m_asks.emplace(t_order->m_price, elob::order_limit()).first;
 	const auto order_it = limit_it->second.insert(t_order);
 	t_order->m_limit_it = limit_it;
 	t_order->m_order_it = order_it;
@@ -179,7 +181,7 @@ void lob::book::queue_ask_order(const std::shared_ptr<order> &t_order) {
 	t_order->on_queued();
 }
 
-void lob::book::insert_bid(const std::shared_ptr<order> &t_order) {
+void elob::book::insert_bid(const std::shared_ptr<order> &t_order) {
 
 	execute_bid(t_order);
 
@@ -199,7 +201,7 @@ void lob::book::insert_bid(const std::shared_ptr<order> &t_order) {
 	}
 }
 
-void lob::book::insert_ask(const std::shared_ptr<order> &t_order) {
+void elob::book::insert_ask(const std::shared_ptr<order> &t_order) {
 
 	execute_ask(t_order);
 
@@ -219,7 +221,7 @@ void lob::book::insert_ask(const std::shared_ptr<order> &t_order) {
 	}
 }
 
-void lob::book::insert_aon_bid(const std::shared_ptr<order> &t_order) {
+void elob::book::insert_aon_bid(const std::shared_ptr<order> &t_order) {
 
 	if (bid_is_fillable(t_order)) {
 		execute_bid(t_order);
@@ -237,7 +239,7 @@ void lob::book::insert_aon_bid(const std::shared_ptr<order> &t_order) {
 	queue_bid_order(t_order);
 }
 
-void lob::book::insert_aon_ask(const std::shared_ptr<order> &t_order) {
+void elob::book::insert_aon_ask(const std::shared_ptr<order> &t_order) {
 
 	if (ask_is_fillable(t_order)) {
 		execute_ask(t_order);
@@ -255,7 +257,7 @@ void lob::book::insert_aon_ask(const std::shared_ptr<order> &t_order) {
 	queue_ask_order(t_order);
 }
 
-bool lob::book::bid_is_fillable(const std::shared_ptr<order> &t_order) const {
+bool elob::book::bid_is_fillable(const std::shared_ptr<order> &t_order) const {
 	auto limit_it = m_asks.begin();
 	double quantity_remaining = t_order->m_quantity;
 	const double order_price = t_order->m_price;
@@ -284,7 +286,7 @@ bool lob::book::bid_is_fillable(const std::shared_ptr<order> &t_order) const {
 	return quantity_remaining <= 0.0;
 }
 
-bool lob::book::ask_is_fillable(const std::shared_ptr<order> &t_order) const {
+bool elob::book::ask_is_fillable(const std::shared_ptr<order> &t_order) const {
 	auto limit_it = m_bids.begin();
 	double quantity_remaining = t_order->m_quantity;
 	const double order_price = t_order->m_price;
@@ -313,7 +315,7 @@ bool lob::book::ask_is_fillable(const std::shared_ptr<order> &t_order) const {
 	return quantity_remaining <= 0.0;
 }
 
-void lob::book::execute_bid(const std::shared_ptr<order> &t_order) {
+void elob::book::execute_bid(const std::shared_ptr<order> &t_order) {
 	auto limit_it = m_asks.begin();
 	double order_price = t_order->m_price;
 
@@ -323,7 +325,7 @@ void lob::book::execute_bid(const std::shared_ptr<order> &t_order) {
 			m_market_price = limit_it->first;
 		}
 
-		if(limit_it->second.is_empty()) {
+		if (limit_it->second.is_empty()) {
 			m_asks.erase(limit_it++);
 		} else {
 			++limit_it;
@@ -332,7 +334,8 @@ void lob::book::execute_bid(const std::shared_ptr<order> &t_order) {
 
 	auto trigger_limit_it = m_ask_triggers.begin();
 
-	while (trigger_limit_it != m_ask_triggers.end() && trigger_limit_it->first <= m_market_price) {
+	while (trigger_limit_it != m_ask_triggers.end() &&
+	       trigger_limit_it->first <= m_market_price) {
 		trigger_limit_it->second.trigger_all();
 		++trigger_limit_it;
 	}
@@ -340,7 +343,7 @@ void lob::book::execute_bid(const std::shared_ptr<order> &t_order) {
 	m_ask_triggers.erase(m_ask_triggers.begin(), trigger_limit_it);
 }
 
-void lob::book::execute_ask(const std::shared_ptr<order> &t_order) {
+void elob::book::execute_ask(const std::shared_ptr<order> &t_order) {
 	auto limit_it = m_bids.begin();
 	double order_price = t_order->m_price;
 
@@ -350,7 +353,7 @@ void lob::book::execute_ask(const std::shared_ptr<order> &t_order) {
 			m_market_price = limit_it->first;
 		}
 
-		if(limit_it->second.is_empty()) {
+		if (limit_it->second.is_empty()) {
 			m_bids.erase(limit_it++);
 		} else {
 			++limit_it;
@@ -359,7 +362,8 @@ void lob::book::execute_ask(const std::shared_ptr<order> &t_order) {
 
 	auto trigger_limit_it = m_bid_triggers.begin();
 
-	while (trigger_limit_it != m_bid_triggers.end() && trigger_limit_it->first >= m_market_price) {
+	while (trigger_limit_it != m_bid_triggers.end() &&
+	       trigger_limit_it->first >= m_market_price) {
 		trigger_limit_it->second.trigger_all();
 		++trigger_limit_it;
 	}
@@ -367,21 +371,21 @@ void lob::book::execute_ask(const std::shared_ptr<order> &t_order) {
 	m_bid_triggers.erase(m_bid_triggers.begin(), trigger_limit_it);
 }
 
-void lob::book::execute_queued_aon_bid(const std::shared_ptr<order> &t_order) {
+void elob::book::execute_queued_aon_bid(const std::shared_ptr<order> &t_order) {
 	const double quantity = t_order->m_quantity;
 	execute_bid(t_order);
 
 	t_order->m_limit_it->second.m_aon_quantity -= quantity;
 }
 
-void lob::book::execute_queued_aon_ask(const std::shared_ptr<order> &t_order) {
+void elob::book::execute_queued_aon_ask(const std::shared_ptr<order> &t_order) {
 	const double quantity = t_order->m_quantity;
 	execute_ask(t_order);
 
 	t_order->m_limit_it->second.m_aon_quantity -= quantity;
 }
 
-void lob::book::check_bid_aons(const double t_price) {
+void elob::book::check_bid_aons(const double t_price) {
 	auto limit_it = m_bids.lower_bound(t_price);
 
 	while (limit_it != m_bids.end()) { // todo check if limit is removed
@@ -405,7 +409,7 @@ void lob::book::check_bid_aons(const double t_price) {
 	}
 }
 
-void lob::book::check_ask_aons(const double t_price) {
+void elob::book::check_ask_aons(const double t_price) {
 	auto limit_it = m_asks.lower_bound(t_price);
 
 	while (limit_it != m_asks.end()) { // todo check if limit is removed
@@ -429,7 +433,7 @@ void lob::book::check_ask_aons(const double t_price) {
 	}
 }
 
-lob::book::~book() {
+elob::book::~book() {
 	m_bids.clear();
 	m_asks.clear();
 

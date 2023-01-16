@@ -4,7 +4,7 @@
 #include "trigger.hpp"
 #include <memory>
 
-namespace lob {
+namespace elob {
 
 	template <class order_t> class stop : virtual public trigger {
 		private:
@@ -24,7 +24,7 @@ namespace lob {
 
 	typedef stop<order> stop_order;
 	typedef stop<trigger> stop_trigger;
-} // namespace lob
+} // namespace elob
 
 #endif // #ifndef STOP_HPP
 

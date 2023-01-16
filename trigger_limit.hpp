@@ -3,7 +3,7 @@
 #include <list>
 #include <memory>
 
-namespace lob {
+namespace elob {
     class trigger;
     class book;
 
@@ -60,6 +60,6 @@ namespace lob {
 		~trigger_limit();
     };
 
-} // namespace lob
+} // namespace elob
 
 #endif // #ifndef TRIGGER_LIMIT_HPP

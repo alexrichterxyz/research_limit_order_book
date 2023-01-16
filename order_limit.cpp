@@ -2,7 +2,7 @@
 #include "order.hpp"
 #include <algorithm>
 
-std::list<std::shared_ptr<lob::order>>::iterator lob::order_limit::insert(
+std::list<std::shared_ptr<elob::order>>::iterator elob::order_limit::insert(
     const std::shared_ptr<order> &t_order) {
 	m_orders.push_back(t_order);
 	const auto order_it = std::prev(m_orders.end());
@@ -17,7 +17,7 @@ std::list<std::shared_ptr<lob::order>>::iterator lob::order_limit::insert(
 	return order_it;
 }
 
-void lob::order_limit::erase(
+void elob::order_limit::erase(
     const std::list<std::shared_ptr<order>>::iterator &t_order_it) {
 	auto &order_obj = *t_order_it;
 
@@ -36,7 +36,7 @@ void lob::order_limit::erase(
 	m_orders.erase(t_order_it);
 }
 
-double lob::order_limit::simulate_trade(const double t_quantity) const {
+double elob::order_limit::simulate_trade(const double t_quantity) const {
 
 	// quick check if the order has a greater quantity than the entire limit
 	const double total_quantity = m_quantity + m_aon_quantity;
@@ -63,7 +63,7 @@ double lob::order_limit::simulate_trade(const double t_quantity) const {
 	return quantity_remaining;
 }
 
-double lob::order_limit::trade(const std::shared_ptr<order> &t_order) {
+double elob::order_limit::trade(const std::shared_ptr<order> &t_order) {
 	double traded_quantity = 0.0;
 	double quantity_remaining = t_order->m_quantity;
 	auto queued_order_it = m_orders.begin();
@@ -102,7 +102,7 @@ double lob::order_limit::trade(const std::shared_ptr<order> &t_order) {
 	return traded_quantity;
 }
 
-lob::order_limit::~order_limit() {
+elob::order_limit::~order_limit() {
 	for (auto &order : m_orders) {
 		order->m_book = nullptr;
 		order->m_queued = false;

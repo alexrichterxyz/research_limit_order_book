@@ -2,7 +2,7 @@
 #define COMMON_HPP
 #include <cfloat>
 
-namespace lob {
+namespace elob {
 
 	enum side { bid = 0, ask };
 
@@ -10,6 +10,6 @@ namespace lob {
 
 	const double max_price = DBL_MAX;
 	const double min_price = 0.0;
-} // namespace lob
+} // namespace elob
 
 #endif // #ifndef COMMON_HPP

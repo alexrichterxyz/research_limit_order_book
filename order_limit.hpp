@@ -3,7 +3,7 @@
 #include <list>
 #include <memory>
 
-namespace lob {
+namespace elob {
     class order;
     class book;
 
@@ -130,6 +130,6 @@ namespace lob {
 		~order_limit();
     };
 
-} // namespace lob
+} // namespace elob
 
 #endif // #ifndef ORDER_LIMIT_HPP

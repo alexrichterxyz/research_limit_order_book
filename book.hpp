@@ -9,7 +9,7 @@
 #include <memory>
 #include <queue>
 
-namespace lob {
+namespace elob {
 	class book;
 
 	std::ostream &operator<<(std::ostream &t_os, const book &t_book);
@@ -248,6 +248,6 @@ namespace lob {
 		friend trigger;
 	};
 
-} // namespace lob
+} // namespace elob
 
 #endif // BOOK_HPP

@@ -2,14 +2,14 @@
 #include "book.hpp"
 #include <algorithm>
 
-lob::order::order(const lob::side t_side, const double t_price,
+elob::order::order(const elob::side t_side, const double t_price,
     const double t_quantity, const bool t_immediate_or_cancel,
     const bool t_all_or_nothing)
     : m_side(t_side), m_price(t_price), m_quantity(t_quantity),
       m_immediate_or_cancel(t_immediate_or_cancel),
       m_all_or_nothing(t_all_or_nothing) {}
 
-bool lob::order::cancel() {
+bool elob::order::cancel() {
 	if (m_queued) {
 		m_limit_it->second.erase(m_order_it);
 
@@ -29,7 +29,7 @@ bool lob::order::cancel() {
 	return false;
 }
 
-void lob::order::set_all_or_nothing(const bool t_all_or_nothing) {
+void elob::order::set_all_or_nothing(const bool t_all_or_nothing) {
 	if (t_all_or_nothing == m_all_or_nothing) {
 		return;
 	}
@@ -72,7 +72,7 @@ void lob::order::set_all_or_nothing(const bool t_all_or_nothing) {
 	}
 }
 
-void lob::order::set_quantity(const double t_quantity) {
+void elob::order::set_quantity(const double t_quantity) {
 	if (t_quantity <= 0) {
 		return;
 	}

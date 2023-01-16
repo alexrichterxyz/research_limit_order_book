@@ -5,7 +5,7 @@
 #include <map>
 #include <memory>
 
-namespace lob {
+namespace elob {
 	class trigger_limit;
 	class book;
 
@@ -35,7 +35,7 @@ namespace lob {
 
 		/* these iterators store the location of the order in the order
 		 book. They are used to cancel the order in O(1). */
-		std::map<double, lob::trigger_limit>::iterator m_limit_it;
+		std::map<double, elob::trigger_limit>::iterator m_limit_it;
 		std::list<std::shared_ptr<trigger>>::iterator m_trigger_it;
 
 		protected:
@@ -94,14 +94,14 @@ namespace lob {
 		/**
 		 * @brief Get the side of the trigger.
 		 *
-		 * @return either lob::side::bid or lob::side:ask
+		 * @return either elob::side::bid or elob::side:ask
 		 */
 		inline side get_side() const { return m_side; }
 
 		/**
 		 * @brief Construct a new trigger object
 		 *
-		 * @param t_side, either lob::side::bid or lob::side::ask. Bid
+		 * @param t_side, either elob::side::bid or elob::side::ask. Bid
 		 * triggers are responsive to falling market prices whereas ask
 		 * triggers are responsive to rising market prices.
 		 * @param t_price, the market price (price of last trade) at
@@ -141,6 +141,6 @@ namespace lob {
 		friend book;
 		friend trigger_limit;
 	};
-} // namespace lob
+} // namespace elob
 
 #endif // #ifndef TRIGGER_HPP

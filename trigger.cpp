@@ -2,9 +2,9 @@
 #include "trigger_limit.hpp"
 #include "book.hpp"
 
-lob::trigger::trigger(lob::side t_side, double t_price): m_side(t_side), m_price(t_price) {}
+elob::trigger::trigger(elob::side t_side, double t_price): m_side(t_side), m_price(t_price) {}
 
-bool lob::trigger::cancel() {
+bool elob::trigger::cancel() {
     if(m_queued) {
         
         m_limit_it->second.erase(m_trigger_it);
@@ -29,7 +29,7 @@ bool lob::trigger::cancel() {
     return false;
 }
 
-void lob::trigger::set_price(double t_price) {
+void elob::trigger::set_price(double t_price) {
     if(m_price == t_price) {
         return;
     }

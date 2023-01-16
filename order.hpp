@@ -6,7 +6,7 @@
 #include <map>
 #include <memory>
 
-namespace lob {
+namespace elob {
 
 	class book;
 
@@ -36,7 +36,7 @@ namespace lob {
 
 		/* these iterators store the location of the order in the order
 		 book. They are used to cancel the order in O(1). */
-		std::map<double, lob::order_limit>::iterator m_limit_it;
+		std::map<double, elob::order_limit>::iterator m_limit_it;
 		std::list<std::shared_ptr<order>>::iterator m_order_it;
 
 		protected:
@@ -84,7 +84,7 @@ namespace lob {
 		 * @brief Construct a new order object
 		 *
 		 * @param t_side the side at which the order will be inserted
-		 * (either lob::side::bid or lob::side::ask)
+		 * (either elob::side::bid or elob::side::ask)
 		 * @param t_price the price at which the order will be inserted.
 		 * For market orders this will be 0.0 (sell) or DBL_MAX (buy)
 		 * @param t_quantity the quantity demanded or provided.
@@ -121,7 +121,7 @@ namespace lob {
 		/**
 		 * @brief Get the side of the order.
 		 *
-		 * @return either lob::side::bid or lob::side::ask.
+		 * @return either elob::side::bid or elob::side::ask.
 		 */
 		inline side get_side() const { return m_side; }
 
@@ -187,6 +187,6 @@ namespace lob {
 		friend order_limit;
 	};
 
-} // namespace lob
+} // namespace elob
 
 #endif // #ifndef ORDER_HPP
