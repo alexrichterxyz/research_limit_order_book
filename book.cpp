@@ -1,5 +1,6 @@
 #include "book.hpp"
-#include "limit.hpp"
+#include "order_limit.hpp"
+#include "trigger_limit.hpp"
 #include <iomanip>
 
 std::ostream &lob::operator<<(std::ostream &t_os, const lob::book &t_book) {
@@ -16,16 +17,7 @@ std::ostream &lob::operator<<(std::ostream &t_os, const lob::book &t_book) {
 	     << " │\n";
 
 	while (true) {
-		while (bid_it != t_book.m_bids.end() &&
-		       bid_it->second.order_count() == 0) {
-			++bid_it;
-		}
-
-		while (ask_it != t_book.m_asks.end() &&
-		       ask_it->second.order_count() == 0) {
-			++ask_it;
-		}
-
+		
 		if (bid_it == t_book.m_bids.end() &&
 		    ask_it == t_book.m_asks.end()) {
 			break;
@@ -143,7 +135,7 @@ void lob::book::insert(const std::shared_ptr<trigger> t_trigger) {
 
 void lob::book::queue_bid_trigger(const std::shared_ptr<trigger> &t_trigger) {
 	const auto limit_it =
-	    m_bids.emplace(t_trigger->m_price, lob::limit()).first;
+	    m_bid_triggers.emplace(t_trigger->m_price, lob::trigger_limit()).first;
 	const auto trigger_it = limit_it->second.insert(t_trigger);
 	t_trigger->m_limit_it = limit_it;
 	t_trigger->m_trigger_it = trigger_it;
@@ -153,7 +145,7 @@ void lob::book::queue_bid_trigger(const std::shared_ptr<trigger> &t_trigger) {
 
 void lob::book::queue_ask_trigger(const std::shared_ptr<trigger> &t_trigger) {
 	const auto limit_it =
-	    m_asks.emplace(t_trigger->m_price, lob::limit()).first;
+	    m_ask_triggers.emplace(t_trigger->m_price, lob::trigger_limit()).first;
 	const auto trigger_it = limit_it->second.insert(t_trigger);
 	t_trigger->m_limit_it = limit_it;
 	t_trigger->m_trigger_it = trigger_it;
@@ -163,7 +155,7 @@ void lob::book::queue_ask_trigger(const std::shared_ptr<trigger> &t_trigger) {
 
 void lob::book::queue_bid_order(const std::shared_ptr<order> &t_order) {
 	const auto limit_it =
-	    m_bids.emplace(t_order->m_price, lob::limit()).first;
+	    m_bids.emplace(t_order->m_price, lob::order_limit()).first;
 	const auto order_it = limit_it->second.insert(t_order);
 	t_order->m_limit_it = limit_it;
 	t_order->m_order_it = order_it;
@@ -176,7 +168,7 @@ void lob::book::queue_bid_order(const std::shared_ptr<order> &t_order) {
 
 void lob::book::queue_ask_order(const std::shared_ptr<order> &t_order) {
 	const auto limit_it =
-	    m_asks.emplace(t_order->m_price, lob::limit()).first;
+	    m_asks.emplace(t_order->m_price, lob::order_limit()).first;
 	const auto order_it = limit_it->second.insert(t_order);
 	t_order->m_limit_it = limit_it;
 	t_order->m_order_it = order_it;
@@ -331,20 +323,17 @@ void lob::book::execute_bid(const std::shared_ptr<order> &t_order) {
 			m_market_price = limit_it->first;
 		}
 
-		++limit_it;
-	}
-
-	limit_it = m_asks.begin();
-
-	while (limit_it != m_asks.end() && limit_it->first <= m_market_price) {
-		limit_it->second.trigger_all();
-
-		if (limit_it->second.is_empty()) {
-			m_asks.erase(limit_it);
-			limit_it = m_asks.begin();
+		if(limit_it->second.is_empty()) {
+			m_asks.erase(limit_it++);
 		} else {
 			++limit_it;
 		}
+	}
+
+	auto trigger_limit_it = m_ask_triggers.begin();
+
+	while (trigger_limit_it != m_ask_triggers.end() && trigger_limit_it->first <= m_market_price) {
+		trigger_limit_it->second.trigger_all();
 	}
 }
 
@@ -358,21 +347,17 @@ void lob::book::execute_ask(const std::shared_ptr<order> &t_order) {
 			m_market_price = limit_it->first;
 		}
 
-		++limit_it;
-	}
-
-	limit_it = m_bids.begin();
-
-	while (limit_it != m_bids.end() && limit_it->first >= m_market_price &&
-	       m_market_price >= 0.0) { // prevent immediate execution
-		limit_it->second.trigger_all();
-
-		if (limit_it->second.is_empty()) {
-			m_bids.erase(limit_it);
-			limit_it = m_bids.begin();
+		if(limit_it->second.is_empty()) {
+			m_bids.erase(limit_it++);
 		} else {
 			++limit_it;
 		}
+	}
+
+	auto trigger_limit_it = m_bid_triggers.begin();
+
+	while (trigger_limit_it != m_bid_triggers.end() && trigger_limit_it->first >= m_market_price) {
+		trigger_limit_it->second.trigger_all();
 	}
 }
 
@@ -441,4 +426,7 @@ void lob::book::check_ask_aons(const double t_price) {
 lob::book::~book() {
 	m_bids.clear();
 	m_asks.clear();
+
+	m_bid_triggers.clear();
+	m_ask_triggers.clear();
 }

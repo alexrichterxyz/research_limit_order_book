@@ -1,9 +1,8 @@
-#include "limit.hpp"
+#include "order_limit.hpp"
 #include "order.hpp"
-#include "trigger.hpp"
 #include <algorithm>
 
-std::list<std::shared_ptr<lob::order>>::iterator lob::limit::insert(
+std::list<std::shared_ptr<lob::order>>::iterator lob::order_limit::insert(
     const std::shared_ptr<order> &t_order) {
 	m_orders.push_back(t_order);
 	const auto order_it = std::prev(m_orders.end());
@@ -18,13 +17,7 @@ std::list<std::shared_ptr<lob::order>>::iterator lob::limit::insert(
 	return order_it;
 }
 
-std::list<std::shared_ptr<lob::trigger>>::iterator lob::limit::insert(
-    const std::shared_ptr<trigger> &t_trigger) {
-	m_triggers.push_back(t_trigger);
-	return std::prev(m_triggers.end());
-}
-
-void lob::limit::erase(
+void lob::order_limit::erase(
     const std::list<std::shared_ptr<order>>::iterator &t_order_it) {
 	auto &order_obj = *t_order_it;
 
@@ -43,14 +36,7 @@ void lob::limit::erase(
 	m_orders.erase(t_order_it);
 }
 
-void lob::limit::erase(
-    const std::list<std::shared_ptr<trigger>>::iterator &t_trigger_it) {
-	auto trigger_obj = *t_trigger_it;
-	trigger_obj->m_queued = false;
-	m_triggers.erase(t_trigger_it);
-}
-
-double lob::limit::simulate_trade(const double t_quantity) const {
+double lob::order_limit::simulate_trade(const double t_quantity) const {
 
 	// quick check if the order has a greater quantity than the entire limit
 	const double total_quantity = m_quantity + m_aon_quantity;
@@ -77,7 +63,7 @@ double lob::limit::simulate_trade(const double t_quantity) const {
 	return quantity_remaining;
 }
 
-double lob::limit::trade(const std::shared_ptr<order> &t_order) {
+double lob::order_limit::trade(const std::shared_ptr<order> &t_order) {
 	double traded_quantity = 0.0;
 	double quantity_remaining = t_order->m_quantity;
 	auto queued_order_it = m_orders.begin();
@@ -116,29 +102,9 @@ double lob::limit::trade(const std::shared_ptr<order> &t_order) {
 	return traded_quantity;
 }
 
-void lob::limit::trigger_all() {
-
-	while (!m_triggers.empty()) {
-		auto trigger_obj = m_triggers.front();
-		m_triggers.pop_front();
-		trigger_obj->m_queued = false;
-		trigger_obj->on_triggered();
-
-		if (!trigger_obj
-			 ->m_queued) { // on_triggered may reinsert the trigger
-			trigger_obj->m_book = nullptr;
-		}
-	}
-}
-
-lob::limit::~limit() {
+lob::order_limit::~order_limit() {
 	for (auto &order : m_orders) {
 		order->m_book = nullptr;
 		order->m_queued = false;
-	}
-
-	for (auto &trigger : m_triggers) {
-		trigger->m_book = nullptr;
-		trigger->m_queued = false;
 	}
 }

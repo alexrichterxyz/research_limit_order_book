@@ -1,7 +1,7 @@
 #ifndef ORDER_HPP
 #define ORDER_HPP
 #include "common.hpp"
-#include "limit.hpp"
+#include "order_limit.hpp"
 #include <list>
 #include <map>
 #include <memory>
@@ -36,7 +36,7 @@ namespace lob {
 
 		/* these iterators store the location of the order in the order
 		 book. They are used to cancel the order in O(1). */
-		std::map<double, lob::limit>::iterator m_limit_it;
+		std::map<double, lob::order_limit>::iterator m_limit_it;
 		std::list<std::shared_ptr<order>>::iterator m_order_it;
 
 		protected:
@@ -184,7 +184,7 @@ namespace lob {
 		inline bool is_queued() const { return m_queued; }
 
 		friend book;
-		friend limit;
+		friend order_limit;
 	};
 
 } // namespace lob

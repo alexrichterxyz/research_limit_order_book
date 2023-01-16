@@ -1,8 +1,9 @@
 #ifndef BOOK_HPP
 #define BOOK_HPP
 #include "common.hpp"
-#include "limit.hpp"
 #include "order.hpp"
+#include "order_limit.hpp"
+#include "trigger_limit.hpp"
 #include "trigger.hpp"
 #include <map>
 #include <memory>
@@ -28,8 +29,11 @@ namespace lob {
 		std::size_t m_order_deferral_depth = 0;
 		std::queue<std::shared_ptr<order>> m_deferred;
 
-		std::map<double, limit, std::greater<double>> m_bids;
-		std::map<double, limit, std::less<double>> m_asks;
+		std::map<double, order_limit, std::greater<double>> m_bids;
+		std::map<double, order_limit, std::less<double>> m_asks;
+
+		std::map<double, trigger_limit, std::greater<double>> m_bid_triggers;
+		std::map<double, trigger_limit, std::less<double>> m_ask_triggers;
 
 		// set to -1 to prevent triggers from being triggered
 		// immediately.
@@ -144,9 +148,7 @@ namespace lob {
 		void insert(const std::shared_ptr<trigger> t_trigger);
 
 		/**
-		 * @brief Get the best bid price. NOTE: this function may
-		 * currenctly return incorrect best bid prices if there are
-		 * triggers inserted above the actual best bid
+		 * @brief Get the best bid price.
 		 *
 		 * @return double the best bid price
 		 */
@@ -156,9 +158,7 @@ namespace lob {
 		}
 
 		/**
-		 * @brief Get the best ask price. NOTE: this function may
-		 * currenctly return incorrect best ask prices if there are
-		 * triggers inserted below the actual best ask
+		 * @brief Get the best ask price.
 		 *
 		 * @return double the best ask price
 		 */
@@ -179,38 +179,38 @@ namespace lob {
 		/**
 		 * @brief Get an iterator to the first bid price level
 		 *
-		 * @return std::map<double, limit>::iterator bid begin iterator
+		 * @return std::map<double, order_limit>::iterator bid begin iterator
 		 */
-		inline std::map<double, limit>::iterator bid_limit_begin() {
+		inline std::map<double, order_limit>::iterator bid_limit_begin() {
 			return m_bids.begin();
 		}
 
 		/**
 		 * @brief Get an iterator to the first ask price level
 		 *
-		 * @return std::map<double, limit>::iterator ask begin iterator
+		 * @return std::map<double, order_limit>::iterator ask begin iterator
 		 */
-		inline std::map<double, limit>::iterator ask_limit_begin() {
+		inline std::map<double, order_limit>::iterator ask_limit_begin() {
 			return m_asks.begin();
 		}
 
 		/**
 		 * @brief Get an iterator to the end of the bids
 		 *
-		 * @return std::map<double, limit>::iterator bid price level end
+		 * @return std::map<double, order_limit>::iterator bid price level end
 		 * iterator
 		 */
-		inline std::map<double, limit>::iterator bid_limit_end() {
+		inline std::map<double, order_limit>::iterator bid_limit_end() {
 			return m_bids.end();
 		}
 
 		/**
 		 * @brief Get an iterator to the end of the asks
 		 *
-		 * @return std::map<double, limit>::iterator ask price level end
+		 * @return std::map<double, order_limit>::iterator ask price level end
 		 * iterator
 		 */
-		inline std::map<double, limit>::iterator ask_limit_end() {
+		inline std::map<double, order_limit>::iterator ask_limit_end() {
 			return m_asks.end();
 		}
 
@@ -218,11 +218,11 @@ namespace lob {
 		 * @brief Get bid price limit at specified price
 		 *
 		 * @param t_price the price of the bid limit
-		 * @return std::map<double, limit>::iterator the bid price
+		 * @return std::map<double, order_limit>::iterator the bid price
 		 * limit. Equals bid_limit_end() if this price limit does not
 		 * exist.
 		 */
-		inline std::map<double, limit>::iterator bid_limit_at(
+		inline std::map<double, order_limit>::iterator bid_limit_at(
 		    const double t_price) {
 			return m_bids.find(t_price);
 		}
@@ -231,11 +231,11 @@ namespace lob {
 		 * @brief Get ask price limit at specified price
 		 *
 		 * @param t_price the price of the ask limit
-		 * @return std::map<double, limit>::iterator the ask price
+		 * @return std::map<double, order_limit>::iterator the ask price
 		 * limit. Equals ask_limit_end() if this price limit does not
 		 * exist.
 		 */
-		inline std::map<double, limit>::iterator ask_limit_at(
+		inline std::map<double, order_limit>::iterator ask_limit_at(
 		    const double t_price) {
 			return m_asks.find(t_price);
 		}

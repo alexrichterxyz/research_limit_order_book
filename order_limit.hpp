@@ -1,26 +1,19 @@
-#ifndef LIMIT_HPP
-#define LIMIT_HPP
+#ifndef ORDER_LIMIT_HPP
+#define ORDER_LIMIT_HPP
 #include <list>
 #include <memory>
 
 namespace lob {
-	class order;
-	class trigger;
-	class book;
+    class order;
+    class book;
 
-	/**
-	 * @brief limits hold the queued order and trigger objects at each price
-	 * level.
-	 *
-	 */
-	class limit {
-		private:
+    class order_limit {
+        private:
 		double m_quantity = 0.0;
 		double m_aon_quantity = 0.0;
-		/* orders and triggers are stored in a doubly-linked list to
+		/* orders are stored in a doubly-linked list to
 		 allow for O(1) cancellation.*/
 		std::list<std::shared_ptr<order>> m_orders;
-		std::list<std::shared_ptr<trigger>> m_triggers;
 
 		/* The field m_aon_order_its stores
 		 * iterators to the all-or-nothing orders in m_orders so that
@@ -38,8 +31,6 @@ namespace lob {
 
 		std::list<std::shared_ptr<order>>::iterator insert(
 		    const std::shared_ptr<order> &t_order);
-		std::list<std::shared_ptr<trigger>>::iterator insert(
-		    const std::shared_ptr<trigger> &t_trigger);
 
 		/**
 		 * @brief Simulates the execution of an order with t_quantity
@@ -59,13 +50,10 @@ namespace lob {
 		 */
 		double trade(const std::shared_ptr<order> &t_order);
 		inline bool is_empty() const {
-			return m_orders.empty() && m_triggers.empty();
+			return m_orders.empty();
 		}
 		void erase(const std::list<std::shared_ptr<order>>::iterator
 			&t_order_it);
-		void erase(const std::list<std::shared_ptr<trigger>>::iterator
-			&t_trigger_it);
-		void trigger_all();
 
 		public:
 		/**
@@ -117,28 +105,6 @@ namespace lob {
 		orders_end() {
 			return m_orders.end();
 		}
-		
-		/**
-		 * @brief Get an iterator to the first trigger in the queue.
-		 *
-		 * @return std::list<std::shared_ptr<trigger>>::iterator, iterator
-		 * to first trigger in the queue.
-		 */
-		inline std::list<std::shared_ptr<trigger>>::iterator
-		triggers_begin() {
-			return m_triggers.begin();
-		}
-
-		/**
-		 * @brief Get an iterator to the end of the trigger queue.
-		 *
-		 * @return std::list<std::shared_ptr<trigger>>::iterator, iterator
-		 * to the end of the trigger queue.
-		 */
-		inline std::list<std::shared_ptr<trigger>>::iterator
-		triggers_end() {
-			return m_triggers.end();
-		}
 
 		/**
 		 * @brief Get the number of orders (including all-or-nothing) at this price level.
@@ -158,21 +124,12 @@ namespace lob {
 			return m_aon_order_its.size();
 		}
 
-		/**
-		 * @brief Get the number of triggers at this price level.
-		 * 
-		 * @return the number of tiggers at this price level.
-		 */
-		inline std::size_t trigger_count() const {
-			return m_triggers.size();
-		}
-
 		friend book;
 		friend order;
-		friend trigger;
 
-		~limit();
-	};
+		~order_limit();
+    };
+
 } // namespace lob
 
-#endif // #ifndef LIMIT_HPP
+#endif // #ifndef ORDER_LIMIT_HPP

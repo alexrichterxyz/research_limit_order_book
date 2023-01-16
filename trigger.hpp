@@ -6,7 +6,7 @@
 #include <memory>
 
 namespace lob {
-	class limit;
+	class trigger_limit;
 	class book;
 
 	/**
@@ -35,7 +35,7 @@ namespace lob {
 
 		/* these iterators store the location of the order in the order
 		 book. They are used to cancel the order in O(1). */
-		std::map<double, lob::limit>::iterator m_limit_it;
+		std::map<double, lob::trigger_limit>::iterator m_limit_it;
 		std::list<std::shared_ptr<trigger>>::iterator m_trigger_it;
 
 		protected:
@@ -49,9 +49,7 @@ namespace lob {
 		virtual void on_accepted(){};
 
 		/**
-		 * @brief called once the trigger has been queued at the
-		 * specified price level.
-		 *
+		 * @brief called once the trigglimit
 		 */
 		virtual void on_queued(){};
 
@@ -141,7 +139,7 @@ namespace lob {
 		inline bool is_queued() const { return m_queued; }
 
 		friend book;
-		friend limit;
+		friend trigger_limit;
 	};
 } // namespace lob
 
