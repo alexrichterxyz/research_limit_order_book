@@ -334,7 +334,10 @@ void lob::book::execute_bid(const std::shared_ptr<order> &t_order) {
 
 	while (trigger_limit_it != m_ask_triggers.end() && trigger_limit_it->first <= m_market_price) {
 		trigger_limit_it->second.trigger_all();
+		++trigger_limit_it;
 	}
+
+	m_ask_triggers.erase(m_ask_triggers.begin(), trigger_limit_it);
 }
 
 void lob::book::execute_ask(const std::shared_ptr<order> &t_order) {
@@ -358,7 +361,10 @@ void lob::book::execute_ask(const std::shared_ptr<order> &t_order) {
 
 	while (trigger_limit_it != m_bid_triggers.end() && trigger_limit_it->first >= m_market_price) {
 		trigger_limit_it->second.trigger_all();
+		++trigger_limit_it;
 	}
+
+	m_bid_triggers.erase(m_bid_triggers.begin(), trigger_limit_it);
 }
 
 void lob::book::execute_queued_aon_bid(const std::shared_ptr<order> &t_order) {
