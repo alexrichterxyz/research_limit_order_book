@@ -1,11 +1,11 @@
 # An extendable C++ limit order book for research purposes
 
-⚠️ Please note that this project is currently in the development phase and is not yet available for use
+⚠️ Please note that this project is currently in the development phase and is not yet available for use.
 
 ## Overview
-A matching engine is the software that executes orders in a financial exchange. This project implements a price-time-priority matching engine which is the type most securities markets operate on.
+A matching engine is the software that executes orders on a financial exchange. This project contains a price-time-priority matching engine -the type most securities markets operate on. 
 
-Not only does this matching engine offer a high level of customization, but it also boasts a user-friendly interface, making it ideal for simulation and research purposes. The engine supports a range of order types and features out-of-the-box, including:
+This C++ implementation boasts a user friendly, efficient, yet highly customizable interface making it ideal for simulation and research purposes. A wide range of of order types and features are supported out-of-the-box, including:
 
 - market orders
 - limit orders
@@ -16,7 +16,8 @@ Not only does this matching engine offer a high level of customization, but it a
 - stop orders
 - trailing stop orders with relative or absolute offset.
 
-Moreover, the engine's flexibility allows for the creation of custom order types that can implement entire trading strategies. This means, for example, that it is possible to design an order type that cancels all limit orders in the order book every time the market price changes and inserts 100 new ones around the BBO while also logging all trades. This is made possible by the engine's "trigger" and "order" interface.
+This engine provides two key building blocks called "trigger" and "order" which can be combined to easily implement complicated, custom order types or even entire trading strategies.
+
 
 ## Implementation
 
@@ -98,12 +99,12 @@ class custom_order : virtual public elob::order {
 
     // event handler that is automatically called 
     // when the order executed against another
-	void on_traded(const std::shared_ptr<elob::order> &other_order) override {
+    void on_traded(const std::shared_ptr<elob::order> &other_order) override {
 		std::cout
             << "Traded with order at price: "
-			<< other_order->get_price()
+	        << other_order->get_price()
             << std::endl;
-	}
+    }
 };
 
 int main(int argc, char *argv[]) {
