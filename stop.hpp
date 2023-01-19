@@ -6,22 +6,20 @@
 
 namespace elob {
 
-	template <class order_t> class stop : virtual public trigger {
-		private:
-		std::shared_ptr<order_t> m_order;
+template <class order_t> class stop : virtual public trigger {
+	private:
+	std::shared_ptr<order_t> m_order;
 
-		void on_triggered() override;
+	void on_triggered() override;
 
-		public:
-		stop(side t_side, double t_price,
-		    std::shared_ptr<order_t> t_order);
+	public:
+	stop(side t_side, double t_price, std::shared_ptr<order_t> t_order);
 
-		inline const std::shared_ptr<order_t> &
-		get_pending_order() const;
-	};
+	inline const std::shared_ptr<order_t> &get_pending_order() const;
+};
 
-	typedef stop<order> stop_order;
-	typedef stop<trigger> stop_trigger;
+typedef stop<order> stop_order;
+typedef stop<trigger> stop_trigger;
 } // namespace elob
 
 #include "book.hpp"

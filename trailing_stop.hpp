@@ -6,43 +6,42 @@
 
 namespace elob {
 
-	template <class order_t> class trailing_stop : virtual public trigger {
-		private:
-		offset_type m_offset_type;
-		double m_offset;
-		std::shared_ptr<order_t> m_order;
-		std::shared_ptr<trigger> m_trailing_stop_controller;
-		bool initialized = false;
+template <class order_t> class trailing_stop : virtual public trigger {
+	private:
+	offset_type m_offset_type;
+	double m_offset;
+	std::shared_ptr<order_t> m_order;
+	trigger_ptr m_trailing_stop_controller;
+	bool initialized = false;
 
-		protected:
-		void on_triggered() override;
-		void on_queued() override;
-		void on_canceled() override;
+	protected:
+	void on_triggered() override;
+	void on_queued() override;
+	void on_canceled() override;
 
-		public:
-		trailing_stop(const side t_side, const double t_price,
-		    const offset_type t_offset_type, const double t_offset,
-		    std::shared_ptr<order> t_order);
+	public:
+	trailing_stop(const side t_side, const double t_price,
+	    const offset_type t_offset_type, const double t_offset,
+	    elob::order_ptr t_order);
 
-		inline const std::shared_ptr<order_t> &
-		get_pending_order() const;
-	};
+	inline const std::shared_ptr<order_t> &get_pending_order() const;
+};
 
-	typedef trailing_stop<order> trailing_stop_order;
-	typedef trailing_stop<trigger> trailing_stop_trigger;
+typedef trailing_stop<order> trailing_stop_order;
+typedef trailing_stop<trigger> trailing_stop_trigger;
 
-	class trailing_stop_controller : virtual public trigger {
-		private:
-		offset_type m_offset_type;
-		double m_offset;
-		trigger &m_trailing_stop;
-		void on_triggered() override;
+class trailing_stop_controller : virtual public trigger {
+	private:
+	offset_type m_offset_type;
+	double m_offset;
+	trigger &m_trailing_stop;
+	void on_triggered() override;
 
-		public:
-		trailing_stop_controller(const side t_side,
-		    const double t_price, const offset_type t_offset_type,
-		    const double t_offset, trigger &t_trailing_stop_order);
-	};
+	public:
+	trailing_stop_controller(const side t_side, const double t_price,
+	    const offset_type t_offset_type, const double t_offset,
+	    trigger &t_trailing_stop_order);
+};
 } // namespace elob
 
 #include "book.hpp"
@@ -90,7 +89,7 @@ void elob::trailing_stop_controller::on_triggered() {
 template <class order_t>
 elob::trailing_stop<order_t>::trailing_stop(const elob::side t_side,
     const double t_price, const elob::offset_type t_offset_type,
-    const double t_offset, std::shared_ptr<elob::order> t_order)
+    const double t_offset, elob::order_ptr t_order)
     : elob::trigger(t_side, t_price), m_offset_type(t_offset_type),
       m_offset(t_offset), m_order(t_order) {}
 

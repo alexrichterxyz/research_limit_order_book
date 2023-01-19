@@ -1,240 +1,226 @@
 #ifndef BOOK_HPP
 #define BOOK_HPP
+#include "common.hpp"
 #include <map>
 #include <memory>
 #include <queue>
 
 namespace elob {
 
-	class book;
-	class order_limit;
-	class trigger_limit;
-	class trigger;
-	class order;
+class book;
+class order_limit;
+class trigger_limit;
+class trigger;
+class order;
 
-	std::ostream &operator<<(std::ostream &t_os, const book &t_book);
+std::ostream &operator<<(std::ostream &t_os, const book &t_book);
+
+/**
+ * @brief book implements a price-time-priotity matching engine. Orders
+ * and triggers can be inserted into book objects.
+ *
+ */
+class book {
+	private:
+	/* During order execution. event handlers like "on_trade" are
+	 * called which may insert additional orders recursively. These
+	 * additional orders will be deferred. Only once
+	 * the outer insertion call has completed, the additional orders
+	 * are removed from the deferral queue and executed. */
+	std::size_t m_order_deferral_depth = 0;
+	std::queue<order_ptr> m_deferred;
+
+	std::map<double, order_limit, std::greater<double>> m_bids;
+	std::map<double, order_limit, std::less<double>> m_asks;
+
+	std::map<double, trigger_limit, std::greater<double>> m_bid_triggers;
+	std::map<double, trigger_limit, std::less<double>> m_ask_triggers;
+
+	// set to -1 to prevent triggers from being triggered
+	// immediately.
+	double m_market_price = -1.0;
 
 	/**
-	 * @brief book implements a price-time-priotity matching engine. Orders
-	 * and triggers can be inserted into book objects.
+	 * \internal
+	 * @brief When called, subsequent orders will be deferred rather
+	 * than being queued immediately. This is required to ensure
+	 * orders are fully executed before new orders, e.g. those
+	 * inserted from within event handlers, are executed.
 	 *
 	 */
-	class book {
-		private:
-		/* During order execution. event handlers like "on_trade" are
-		 * called which may insert additional orders recursively. These
-		 * additional orders will be deferred. Only once
-		 * the outer insertion call has completed, the additional orders
-		 * are removed from the deferral queue and executed. */
-		std::size_t m_order_deferral_depth = 0;
-		std::queue<std::shared_ptr<order>> m_deferred;
+	inline void begin_order_deferral();
 
-		std::map<double, order_limit, std::greater<double>> m_bids;
-		std::map<double, order_limit, std::less<double>> m_asks;
+	/**
+	 * \internal
+	 * @brief Once the outer insertion call has been completed,
+	 * orders from the deferral queue are executed.
+	 *
+	 */
+	inline void end_order_deferral();
 
-		std::map<double, trigger_limit, std::greater<double>>
-		    m_bid_triggers;
-		std::map<double, trigger_limit, std::less<double>>
-		    m_ask_triggers;
+	inline void insert_bid(c_order_ptr &t_order);
+	inline void insert_ask(c_order_ptr &t_order);
 
-		// set to -1 to prevent triggers from being triggered
-		// immediately.
-		double m_market_price = -1.0;
+	inline void insert_aon_bid(c_order_ptr &t_order);
+	inline void insert_aon_ask(c_order_ptr &t_order);
 
-		/**
-		 * \internal
-		 * @brief When called, subsequent orders will be deferred rather
-		 * than being queued immediately. This is required to ensure
-		 * orders are fully executed before new orders, e.g. those
-		 * inserted from within event handlers, are executed.
-		 *
-		 */
-		inline void begin_order_deferral();
+	/**
+	 * \internal
+	 * @brief Check if the bid order can be filled completely. This
+	 * check is performed before all-or-nothing orders are executed.
+	 *
+	 * @param t_order the (all-or-nothing) bid order to be executed.
+	 * @return true the order is completely fillable
+	 * @return false the order is only partially fillable
+	 */
+	inline bool bid_is_fillable(c_order_ptr &t_order) const;
 
-		/**
-		 * \internal
-		 * @brief Once the outer insertion call has been completed,
-		 * orders from the deferral queue are executed.
-		 *
-		 */
-		inline void end_order_deferral();
+	/**
+	 * \internal
+	 * @brief Check if the ask order can be filled completely. This
+	 * check is performed before all-or-nothing orders are executed.
+	 *
+	 * @param t_order the (all-or-nothing) ask order to be executed.
+	 * @return true the order is completely fillable
+	 * @return false the order is only partially fillable
+	 */
+	inline bool ask_is_fillable(c_order_ptr &t_order) const;
 
-		inline void insert_bid(const std::shared_ptr<order> &t_order);
-		inline void insert_ask(const std::shared_ptr<order> &t_order);
+	inline void execute_bid(c_order_ptr &t_order);
+	inline void execute_ask(c_order_ptr &t_order);
 
-		inline void insert_aon_bid(
-		    const std::shared_ptr<order> &t_order);
-		inline void insert_aon_ask(
-		    const std::shared_ptr<order> &t_order);
+	inline void execute_queued_aon_bid(c_order_ptr &t_order);
+	inline void execute_queued_aon_ask(c_order_ptr &t_order);
 
-		/**
-		 * \internal
-		 * @brief Check if the bid order can be filled completely. This
-		 * check is performed before all-or-nothing orders are executed.
-		 *
-		 * @param t_order the (all-or-nothing) bid order to be executed.
-		 * @return true the order is completely fillable
-		 * @return false the order is only partially fillable
-		 */
-		inline bool bid_is_fillable(
-		    const std::shared_ptr<order> &t_order) const;
+	inline void queue_bid_order(c_order_ptr &t_order);
+	inline void queue_ask_order(c_order_ptr &t_order);
 
-		/**
-		 * \internal
-		 * @brief Check if the ask order can be filled completely. This
-		 * check is performed before all-or-nothing orders are executed.
-		 *
-		 * @param t_order the (all-or-nothing) ask order to be executed.
-		 * @return true the order is completely fillable
-		 * @return false the order is only partially fillable
-		 */
-		inline bool ask_is_fillable(
-		    const std::shared_ptr<order> &t_order) const;
+	inline void queue_bid_trigger(c_trigger_ptr &t_trigger);
+	inline void queue_ask_trigger(c_trigger_ptr &t_trigger);
 
-		inline void execute_bid(const std::shared_ptr<order> &t_order);
-		inline void execute_ask(const std::shared_ptr<order> &t_order);
+	/**
+	 * @brief Check if any all-or-nothing bids at the specified
+	 * price or lower are executable. This function is called if the
+	 * quantity of queued orders is increased.
+	 *
+	 * @param t_price the price from which queued all-or-nothing
+	 * will be checked.
+	 */
+	inline void check_bid_aons(const double t_price);
 
-		inline void execute_queued_aon_bid(
-		    const std::shared_ptr<order> &t_order);
-		inline void execute_queued_aon_ask(
-		    const std::shared_ptr<order> &t_order);
+	/**
+	 * @brief Check if any all-or-nothing asks at the specified
+	 * price or higher are executable. This function is called if
+	 * the quantity of queued orders is increased.
+	 *
+	 * @param t_price the price from which queued all-or-nothing
+	 * will be checked.
+	 */
+	inline void check_ask_aons(const double t_price);
 
-		inline void queue_bid_order(
-		    const std::shared_ptr<order> &t_order);
-		inline void queue_ask_order(
-		    const std::shared_ptr<order> &t_order);
+	public:
+	/**
+	 * @brief Inserts an order into the book. Marketable orders will
+	 * be executed. Partially filled orders will be queued (or
+	 * canelled if marked as immediate-or-cancel). When the function
+	 * is called from within another order's event handler (like
+	 * on_trade), the order will be deferred and only executed once
+	 * the other order has been handled.
+	 *
+	 * @param t_order the order to be inserted
+	 */
+	inline void insert(c_order_ptr t_order);
 
-		inline void queue_bid_trigger(
-		    const std::shared_ptr<trigger> &t_trigger);
-		inline void queue_ask_trigger(
-		    const std::shared_ptr<trigger> &t_trigger);
+	/**
+	 * @brief Inserts a trigger into the book. Unlike orders,
+	 * triggers will cannot be deferred and will instead be queued
+	 * immediately.
+	 *
+	 * @param t_trigger the trigger to be inserted
+	 */
+	inline void insert(elob::c_trigger_ptr t_trigger);
 
-		/**
-		 * @brief Check if any all-or-nothing bids at the specified
-		 * price or lower are executable. This function is called if the
-		 * quantity of queued orders is increased.
-		 *
-		 * @param t_price the price from which queued all-or-nothing
-		 * will be checked.
-		 */
-		inline void check_bid_aons(const double t_price);
+	/**
+	 * @brief Get the best bid price.
+	 *
+	 * @return double the best bid price
+	 */
+	inline double get_bid_price() const;
 
-		/**
-		 * @brief Check if any all-or-nothing asks at the specified
-		 * price or higher are executable. This function is called if
-		 * the quantity of queued orders is increased.
-		 *
-		 * @param t_price the price from which queued all-or-nothing
-		 * will be checked.
-		 */
-		inline void check_ask_aons(const double t_price);
+	/**
+	 * @brief Get the best ask price.
+	 *
+	 * @return double the best ask price
+	 */
+	inline double get_ask_price() const;
 
-		public:
-		/**
-		 * @brief Inserts an order into the book. Marketable orders will
-		 * be executed. Partially filled orders will be queued (or
-		 * canelled if marked as immediate-or-cancel). When the function
-		 * is called from within another order's event handler (like
-		 * on_trade), the order will be deferred and only executed once
-		 * the other order has been handled.
-		 *
-		 * @param t_order the order to be inserted
-		 */
-		inline void insert(const std::shared_ptr<order> t_order);
+	/**
+	 * @brief Get the price at which the last trade occured.
+	 *
+	 * @return double the current market price
+	 */
+	inline double get_market_price() const;
 
-		/**
-		 * @brief Inserts a trigger into the book. Unlike orders,
-		 * triggers will cannot be deferred and will instead be queued
-		 * immediately.
-		 *
-		 * @param t_trigger the trigger to be inserted
-		 */
-		inline void insert(const std::shared_ptr<trigger> t_trigger);
+	/**
+	 * @brief Get an iterator to the first bid price level
+	 *
+	 * @return std::map<double, order_limit>::iterator bid begin
+	 * iterator
+	 */
+	inline std::map<double, order_limit>::iterator bid_limit_begin();
 
-		/**
-		 * @brief Get the best bid price.
-		 *
-		 * @return double the best bid price
-		 */
-		inline double get_bid_price() const;
+	/**
+	 * @brief Get an iterator to the first ask price level
+	 *
+	 * @return std::map<double, order_limit>::iterator ask begin
+	 * iterator
+	 */
+	inline std::map<double, order_limit>::iterator ask_limit_begin();
 
-		/**
-		 * @brief Get the best ask price.
-		 *
-		 * @return double the best ask price
-		 */
-		inline double get_ask_price() const;
+	/**
+	 * @brief Get an iterator to the end of the bids
+	 *
+	 * @return std::map<double, order_limit>::iterator bid price
+	 * level end iterator
+	 */
+	inline std::map<double, order_limit>::iterator bid_limit_end();
 
-		/**
-		 * @brief Get the price at which the last trade occured.
-		 *
-		 * @return double the current market price
-		 */
-		inline double get_market_price() const;
+	/**
+	 * @brief Get an iterator to the end of the asks
+	 *
+	 * @return std::map<double, order_limit>::iterator ask price
+	 * level end iterator
+	 */
+	inline std::map<double, order_limit>::iterator ask_limit_end();
 
-		/**
-		 * @brief Get an iterator to the first bid price level
-		 *
-		 * @return std::map<double, order_limit>::iterator bid begin
-		 * iterator
-		 */
-		inline std::map<double, order_limit>::iterator
-		bid_limit_begin();
+	/**
+	 * @brief Get bid price limit at specified price
+	 *
+	 * @param t_price the price of the bid limit
+	 * @return std::map<double, order_limit>::iterator the bid price
+	 * limit. Equals bid_limit_end() if this price limit does not
+	 * exist.
+	 */
+	inline std::map<double, order_limit>::iterator bid_limit_at(
+	    const double t_price);
 
-		/**
-		 * @brief Get an iterator to the first ask price level
-		 *
-		 * @return std::map<double, order_limit>::iterator ask begin
-		 * iterator
-		 */
-		inline std::map<double, order_limit>::iterator
-		ask_limit_begin();
+	/**
+	 * @brief Get ask price limit at specified price
+	 *
+	 * @param t_price the price of the ask limit
+	 * @return std::map<double, order_limit>::iterator the ask price
+	 * limit. Equals ask_limit_end() if this price limit does not
+	 * exist.
+	 */
+	inline std::map<double, order_limit>::iterator ask_limit_at(
+	    const double t_price);
 
-		/**
-		 * @brief Get an iterator to the end of the bids
-		 *
-		 * @return std::map<double, order_limit>::iterator bid price
-		 * level end iterator
-		 */
-		inline std::map<double, order_limit>::iterator bid_limit_end();
+	~book();
 
-		/**
-		 * @brief Get an iterator to the end of the asks
-		 *
-		 * @return std::map<double, order_limit>::iterator ask price
-		 * level end iterator
-		 */
-		inline std::map<double, order_limit>::iterator ask_limit_end();
-
-		/**
-		 * @brief Get bid price limit at specified price
-		 *
-		 * @param t_price the price of the bid limit
-		 * @return std::map<double, order_limit>::iterator the bid price
-		 * limit. Equals bid_limit_end() if this price limit does not
-		 * exist.
-		 */
-		inline std::map<double, order_limit>::iterator bid_limit_at(
-		    const double t_price);
-
-		/**
-		 * @brief Get ask price limit at specified price
-		 *
-		 * @param t_price the price of the ask limit
-		 * @return std::map<double, order_limit>::iterator the ask price
-		 * limit. Equals ask_limit_end() if this price limit does not
-		 * exist.
-		 */
-		inline std::map<double, order_limit>::iterator ask_limit_at(
-		    const double t_price);
-
-		~book();
-
-		friend std::ostream &operator<<(
-		    std::ostream &t_os, const book &t_book);
-		friend order;
-		friend trigger;
-	};
+	friend std::ostream &operator<<(std::ostream &t_os, const book &t_book);
+	friend order;
+	friend trigger;
+};
 
 } // namespace elob
 
@@ -293,7 +279,7 @@ std::ostream &elob::operator<<(std::ostream &t_os, const elob::book &t_book) {
 	return t_os;
 }
 
-void elob::book::insert(const std::shared_ptr<elob::order> t_order) {
+void elob::book::insert(elob::c_order_ptr t_order) {
 	// check if order is valid
 	if (m_order_deferral_depth > 0) {
 		m_deferred.push(t_order);
@@ -347,7 +333,7 @@ void elob::book::end_order_deferral() {
 	}
 }
 
-void elob::book::insert(const std::shared_ptr<elob::trigger> t_trigger) {
+void elob::book::insert(elob::c_trigger_ptr t_trigger) {
 	// check if order is valid
 	if (t_trigger->m_queued) {
 		return;
@@ -375,7 +361,7 @@ void elob::book::insert(const std::shared_ptr<elob::trigger> t_trigger) {
 	}
 }
 
-void elob::book::queue_bid_trigger(const std::shared_ptr<elob::trigger> &t_trigger) {
+void elob::book::queue_bid_trigger(elob::c_trigger_ptr &t_trigger) {
 	const auto limit_it =
 	    m_bid_triggers.emplace(t_trigger->m_price, elob::trigger_limit())
 		.first;
@@ -386,7 +372,7 @@ void elob::book::queue_bid_trigger(const std::shared_ptr<elob::trigger> &t_trigg
 	t_trigger->on_queued();
 }
 
-void elob::book::queue_ask_trigger(const std::shared_ptr<elob::trigger> &t_trigger) {
+void elob::book::queue_ask_trigger(elob::c_trigger_ptr &t_trigger) {
 	const auto limit_it =
 	    m_ask_triggers.emplace(t_trigger->m_price, elob::trigger_limit())
 		.first;
@@ -397,7 +383,7 @@ void elob::book::queue_ask_trigger(const std::shared_ptr<elob::trigger> &t_trigg
 	t_trigger->on_queued();
 }
 
-void elob::book::queue_bid_order(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::queue_bid_order(elob::c_order_ptr &t_order) {
 	const auto limit_it =
 	    m_bids.emplace(t_order->m_price, elob::order_limit()).first;
 	const auto order_it = limit_it->second.insert(t_order);
@@ -410,7 +396,7 @@ void elob::book::queue_bid_order(const std::shared_ptr<elob::order> &t_order) {
 	t_order->on_queued();
 }
 
-void elob::book::queue_ask_order(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::queue_ask_order(elob::c_order_ptr &t_order) {
 	const auto limit_it =
 	    m_asks.emplace(t_order->m_price, elob::order_limit()).first;
 	const auto order_it = limit_it->second.insert(t_order);
@@ -423,7 +409,7 @@ void elob::book::queue_ask_order(const std::shared_ptr<elob::order> &t_order) {
 	t_order->on_queued();
 }
 
-void elob::book::insert_bid(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::insert_bid(elob::c_order_ptr &t_order) {
 
 	execute_bid(t_order);
 
@@ -443,7 +429,7 @@ void elob::book::insert_bid(const std::shared_ptr<elob::order> &t_order) {
 	}
 }
 
-void elob::book::insert_ask(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::insert_ask(elob::c_order_ptr &t_order) {
 
 	execute_ask(t_order);
 
@@ -463,7 +449,7 @@ void elob::book::insert_ask(const std::shared_ptr<elob::order> &t_order) {
 	}
 }
 
-void elob::book::insert_aon_bid(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::insert_aon_bid(elob::c_order_ptr &t_order) {
 
 	if (bid_is_fillable(t_order)) {
 		execute_bid(t_order);
@@ -481,7 +467,7 @@ void elob::book::insert_aon_bid(const std::shared_ptr<elob::order> &t_order) {
 	queue_bid_order(t_order);
 }
 
-void elob::book::insert_aon_ask(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::insert_aon_ask(elob::c_order_ptr &t_order) {
 
 	if (ask_is_fillable(t_order)) {
 		execute_ask(t_order);
@@ -499,7 +485,7 @@ void elob::book::insert_aon_ask(const std::shared_ptr<elob::order> &t_order) {
 	queue_ask_order(t_order);
 }
 
-bool elob::book::bid_is_fillable(const std::shared_ptr<elob::order> &t_order) const {
+bool elob::book::bid_is_fillable(elob::c_order_ptr &t_order) const {
 	auto limit_it = m_asks.begin();
 	double quantity_remaining = t_order->m_quantity;
 	const double order_price = t_order->m_price;
@@ -528,7 +514,7 @@ bool elob::book::bid_is_fillable(const std::shared_ptr<elob::order> &t_order) co
 	return quantity_remaining <= 0.0;
 }
 
-bool elob::book::ask_is_fillable(const std::shared_ptr<elob::order> &t_order) const {
+bool elob::book::ask_is_fillable(elob::c_order_ptr &t_order) const {
 	auto limit_it = m_bids.begin();
 	double quantity_remaining = t_order->m_quantity;
 	const double order_price = t_order->m_price;
@@ -557,7 +543,7 @@ bool elob::book::ask_is_fillable(const std::shared_ptr<elob::order> &t_order) co
 	return quantity_remaining <= 0.0;
 }
 
-void elob::book::execute_bid(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::execute_bid(elob::c_order_ptr &t_order) {
 	auto limit_it = m_asks.begin();
 	double order_price = t_order->m_price;
 
@@ -585,7 +571,7 @@ void elob::book::execute_bid(const std::shared_ptr<elob::order> &t_order) {
 	m_ask_triggers.erase(m_ask_triggers.begin(), trigger_limit_it);
 }
 
-void elob::book::execute_ask(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::execute_ask(elob::c_order_ptr &t_order) {
 	auto limit_it = m_bids.begin();
 	double order_price = t_order->m_price;
 
@@ -613,14 +599,14 @@ void elob::book::execute_ask(const std::shared_ptr<elob::order> &t_order) {
 	m_bid_triggers.erase(m_bid_triggers.begin(), trigger_limit_it);
 }
 
-void elob::book::execute_queued_aon_bid(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::execute_queued_aon_bid(elob::c_order_ptr &t_order) {
 	const double quantity = t_order->m_quantity;
 	execute_bid(t_order);
 
 	t_order->m_limit_it->second.m_aon_quantity -= quantity;
 }
 
-void elob::book::execute_queued_aon_ask(const std::shared_ptr<elob::order> &t_order) {
+void elob::book::execute_queued_aon_ask(elob::c_order_ptr &t_order) {
 	const double quantity = t_order->m_quantity;
 	execute_ask(t_order);
 

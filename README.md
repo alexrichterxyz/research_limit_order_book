@@ -99,7 +99,7 @@ class custom_order : virtual public elob::order {
 
     // event handler that is automatically called 
     // when the order executed against another
-    void on_traded(const std::shared_ptr<elob::order> &other_order) override {
+    void on_traded(c_order_ptr &other_order) override {
 		std::cout
             << "Traded with order at price: "
 	        << other_order->get_price()

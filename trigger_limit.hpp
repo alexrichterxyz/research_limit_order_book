@@ -4,64 +4,60 @@
 #include <memory>
 
 namespace elob {
-	class trigger;
-	class book;
+class trigger;
+class book;
 
-	class trigger_limit {
-		private:
-		std::list<std::shared_ptr<trigger>> m_triggers;
+class trigger_limit {
+	private:
+	std::list<trigger_ptr> m_triggers;
 
-		std::list<std::shared_ptr<trigger>>::iterator insert(
-		    const std::shared_ptr<trigger> &t_trigger);
+	std::list<trigger_ptr>::iterator insert(c_trigger_ptr &t_trigger);
 
-		inline bool is_empty() const { return m_triggers.empty(); }
+	inline bool is_empty() const { return m_triggers.empty(); }
 
-		void erase(const std::list<std::shared_ptr<trigger>>::iterator
-			&t_trigger_it);
-		void trigger_all();
+	void erase(const std::list<trigger_ptr>::iterator &t_trigger_it);
+	void trigger_all();
 
-		public:
-		/**
-		 * @brief Get an iterator to the first trigger in the queue.
-		 *
-		 * @return std::list<std::shared_ptr<trigger>>::iterator,
-		 * iterator to first trigger in the queue.
-		 */
-		inline std::list<std::shared_ptr<trigger>>::iterator
-		triggers_begin();
+	public:
+	/**
+	 * @brief Get an iterator to the first trigger in the queue.
+	 *
+	 * @return std::list<elob::trigger_ptr>::iterator,
+	 * iterator to first trigger in the queue.
+	 */
+	inline std::list<trigger_ptr>::iterator triggers_begin();
 
-		/**
-		 * @brief Get an iterator to the end of the trigger queue.
-		 *
-		 * @return std::list<std::shared_ptr<trigger>>::iterator,
-		 * iterator to the end of the trigger queue.
-		 */
-		inline std::list<std::shared_ptr<trigger>>::iterator
-		triggers_end();
+	/**
+	 * @brief Get an iterator to the end of the trigger queue.
+	 *
+	 * @return std::list<elob::trigger_ptr>::iterator,
+	 * iterator to the end of the trigger queue.
+	 */
+	inline std::list<trigger_ptr>::iterator triggers_end();
 
-		/**
-		 * @brief Get the number of triggers at this price level.
-		 *
-		 * @return the number of tiggers at this price level.
-		 */
-		inline std::size_t trigger_count() const;
+	/**
+	 * @brief Get the number of triggers at this price level.
+	 *
+	 * @return the number of tiggers at this price level.
+	 */
+	inline std::size_t trigger_count() const;
 
-		friend book;
-		friend trigger;
+	friend book;
+	friend trigger;
 
-		~trigger_limit();
-	};
+	~trigger_limit();
+};
 
 } // namespace elob
 
-std::list<std::shared_ptr<elob::trigger>>::iterator elob::trigger_limit::insert(
-    const std::shared_ptr<elob::trigger> &t_trigger) {
+std::list<elob::trigger_ptr>::iterator elob::trigger_limit::insert(
+    elob::c_trigger_ptr &t_trigger) {
 	m_triggers.push_back(t_trigger);
 	return std::prev(m_triggers.end());
 }
 
 void elob::trigger_limit::erase(
-    const std::list<std::shared_ptr<elob::trigger>>::iterator &t_trigger_it) {
+    const std::list<elob::trigger_ptr>::iterator &t_trigger_it) {
 	auto trigger_obj = *t_trigger_it;
 	trigger_obj->m_queued = false;
 	m_triggers.erase(t_trigger_it);
@@ -89,12 +85,11 @@ elob::trigger_limit::~trigger_limit() {
 	}
 }
 
-std::list<std::shared_ptr<elob::trigger>>::iterator
-elob::trigger_limit::triggers_begin() {
+std::list<elob::trigger_ptr>::iterator elob::trigger_limit::triggers_begin() {
 	return m_triggers.begin();
 }
 
-inline std::list<std::shared_ptr<elob::trigger>>::iterator
+inline std::list<elob::trigger_ptr>::iterator
 elob::trigger_limit::triggers_end() {
 	return m_triggers.end();
 }
