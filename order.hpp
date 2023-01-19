@@ -1,7 +1,5 @@
 #ifndef ORDER_HPP
 #define ORDER_HPP
-#include "common.hpp"
-#include "order_limit.hpp"
 #include <list>
 #include <map>
 #include <memory>
@@ -30,12 +28,12 @@ namespace elob {
 		bool m_queued = false;
 
 		/* pointer to the book into which the order was inserted.
-		 it's guaranteed to be dereferencable in the virtual event
-		 methods. */
+			it's guaranteed to be dereferencable in the virtual
+		   event methods. */
 		book *m_book = nullptr;
 
 		/* these iterators store the location of the order in the order
-		 book. They are used to cancel the order in O(1). */
+			book. They are used to cancel the order in O(1). */
 		std::map<double, elob::order_limit>::iterator m_limit_it;
 		std::list<std::shared_ptr<order>>::iterator m_order_it;
 
@@ -94,8 +92,9 @@ namespace elob {
 		 * or nothing.
 		 */
 		order(const side t_side, const double t_price,
-		    const double t_quantity, const bool t_immediate_or_cancel=false,
-		    const bool t_all_or_nothing=false);
+		    const double t_quantity,
+		    const bool t_immediate_or_cancel = false,
+		    const bool t_all_or_nothing = false);
 
 		/**
 		 * @brief Cancels the order, if possible. Currently, only queued
@@ -105,7 +104,7 @@ namespace elob {
 		 * @return false could not cancel the order because it hasn't
 		 * been queued yet.
 		 */
-		bool cancel();
+		inline bool cancel();
 
 		/**
 		 * @brief Get the instance of the book into which the order was
@@ -116,28 +115,28 @@ namespace elob {
 		 * was inserted or nullptr if it hasn't been inserted into a
 		 * book yet or got removed from it.
 		 */
-		inline book *get_book() const { return m_book; }
+		inline book *get_book() const;
 
 		/**
 		 * @brief Get the side of the order.
 		 *
 		 * @return either elob::side::bid or elob::side::ask.
 		 */
-		inline side get_side() const { return m_side; }
+		inline side get_side() const;
 
 		/**
 		 * @brief Get the price of the order.
 		 *
 		 * @return double price of the order.
 		 */
-		inline double get_price() const { return m_price; }
+		inline double get_price() const;
 
 		/**
 		 * @brief Get the quantity of the order.
 		 *
 		 * @return the quantity of the order.
 		 */
-		inline double get_quantity() const { return m_quantity; }
+		inline double get_quantity() const;
 
 		/**
 		 * @brief Update the quantity of the order. This operation is
@@ -146,7 +145,7 @@ namespace elob {
 		 *
 		 * @param t_quantity
 		 */
-		void set_quantity(const double t_quantity);
+		inline void set_quantity(const double t_quantity);
 
 		/**
 		 * @brief Check if the order is immediate or cancel.
@@ -154,9 +153,7 @@ namespace elob {
 		 * @return true, is immediate or cancel.
 		 * @return false, is not immediate or cancel.
 		 */
-		inline bool is_immediate_or_cancel() const {
-			return m_immediate_or_cancel;
-		}
+		inline bool is_immediate_or_cancel() const;
 
 		/**
 		 * @brief Check if the order is all or nothing.
@@ -164,29 +161,200 @@ namespace elob {
 		 * @return true, is all or nothing.
 		 * @return false, is not all or nothing.
 		 */
-		inline bool is_all_or_nothing() const {
-			return m_all_or_nothing;
-		}
+		inline bool is_all_or_nothing() const;
 
 		/**
 		 * @brief Update the order's all or nothing flag.
-		 * 
-		 * @param t_all_or_nothing the update value of the order's all or nothing flag
+		 *
+		 * @param t_all_or_nothing the update value of the order's all
+		 * or nothing flag
 		 */
-		void set_all_or_nothing(const bool t_all_or_nothing);
+		inline void set_all_or_nothing(const bool t_all_or_nothing);
 
 		/**
-		 * @brief Check whether the order is queued. Queued orders can be canceled.
-		 * 
+		 * @brief Check whether the order is queued. Queued orders can
+		 * be canceled.
+		 *
 		 * @return true, the order is queued.
 		 * @return false, the order is not queued.
 		 */
-		inline bool is_queued() const { return m_queued; }
+		inline bool is_queued() const;
 
 		friend book;
 		friend order_limit;
 	};
 
 } // namespace elob
+
+#include "book.hpp"
+#include "common.hpp"
+#include "order_limit.hpp"
+#include <algorithm>
+
+elob::order::order(const elob::side t_side, const double t_price,
+    const double t_quantity, const bool t_immediate_or_cancel,
+    const bool t_all_or_nothing)
+    : m_side(t_side), m_price(t_price), m_quantity(t_quantity),
+      m_immediate_or_cancel(t_immediate_or_cancel),
+      m_all_or_nothing(t_all_or_nothing) {}
+
+bool elob::order::cancel() {
+	if (m_queued) {
+		m_limit_it->second.erase(m_order_it);
+
+		if (m_limit_it->second.is_empty()) {
+			if (m_side == side::bid) {
+				m_book->m_bids.erase(m_limit_it);
+			} else {
+				m_book->m_asks.erase(m_limit_it);
+			}
+		}
+
+		m_book = nullptr;
+
+		return true;
+	}
+
+	return false;
+}
+
+void elob::order::set_all_or_nothing(const bool t_all_or_nothing) {
+	if (t_all_or_nothing == m_all_or_nothing) {
+		return;
+	}
+
+	if (!m_queued) {
+		m_all_or_nothing = t_all_or_nothing;
+		return;
+	}
+
+	auto &limit_obj = m_limit_it->second;
+	auto &aon_order_its = limit_obj.m_aon_order_its;
+
+	if (t_all_or_nothing) { // is queued and change from false to true
+		// to ensure price-TIME priority, one needs to find the orevious
+		// occurence in m_aon_order_its
+		limit_obj.m_aon_quantity += m_quantity;
+		limit_obj.m_quantity -= m_quantity;
+
+		auto order_it = m_order_it;
+		const auto first_order_it = m_limit_it->second.m_orders.begin();
+
+		while (order_it != first_order_it) {
+			--order_it;
+			if ((*order_it)->m_all_or_nothing) {
+				const auto insert_at_it =
+				    ++std::find(aon_order_its.begin(),
+					aon_order_its.end(), order_it);
+				aon_order_its.insert(insert_at_it, m_order_it);
+				return;
+			}
+		}
+
+		m_limit_it->second.m_aon_order_its.push_back(order_it);
+
+	} else { // is queued and change from true to false
+		limit_obj.m_aon_quantity -= m_quantity;
+		limit_obj.m_quantity += m_quantity;
+		aon_order_its.erase(std::find(
+		    aon_order_its.begin(), aon_order_its.end(), m_order_it));
+	}
+}
+
+void elob::order::set_quantity(const double t_quantity) {
+	if (t_quantity <= 0) {
+		return;
+	}
+
+	if (!m_queued) {
+		m_quantity = t_quantity;
+		return;
+	}
+
+	// order is queued
+
+	if (m_all_or_nothing) {
+
+		m_limit_it->second.m_aon_quantity += t_quantity - m_quantity;
+		m_quantity = t_quantity;
+
+		if (t_quantity <= m_quantity) { // decrease quantity
+
+			// attempt to execute itself against all orders
+			if (m_side == side::bid &&
+			    m_book->bid_is_fillable(*m_order_it)) {
+
+				// todo remove from aon queue
+				m_book->begin_order_deferral();
+				m_book->execute_queued_aon_bid(*m_order_it);
+				m_limit_it->second.erase(m_order_it);
+
+				if (m_limit_it->second.is_empty()) {
+					m_book->m_bids.erase(m_limit_it);
+				}
+
+				m_book->end_order_deferral();
+
+				m_book = nullptr;
+			} else if (m_side == side::ask &&
+				   m_book->ask_is_fillable(*m_order_it)) {
+				m_book->begin_order_deferral();
+				m_book->execute_queued_aon_ask(*m_order_it);
+				m_limit_it->second.erase(
+				    m_order_it); // todo remove from aon queue
+
+				if (m_limit_it->second.is_empty()) {
+					m_book->m_asks.erase(m_limit_it);
+				}
+
+				m_book->end_order_deferral();
+				m_book = nullptr;
+			}
+
+		} else { // increase quantity
+			// attempt to execute AON orders on other side
+			m_book->begin_order_deferral();
+			if (m_side == side::bid) {
+				m_book->check_ask_aons(m_price);
+			} else {
+				m_book->check_bid_aons(m_price);
+			}
+			m_book->end_order_deferral();
+		}
+
+	} else {
+		m_limit_it->second.m_quantity += t_quantity - m_quantity;
+		m_quantity = t_quantity;
+
+		if (t_quantity <= m_quantity) { // decrease quantity
+						// nothing happens
+		} else {
+			// attempt to execute AON orders on other side
+			m_book->begin_order_deferral();
+			if (m_side == side::bid) {
+				m_book->check_ask_aons(m_price);
+			} else {
+				m_book->check_bid_aons(m_price);
+			}
+			m_book->end_order_deferral();
+		}
+	}
+}
+
+elob::book *elob::order::get_book() const { return m_book; }
+
+elob::side elob::order::get_side() const { return m_side; }
+
+double elob::order::get_price() const { return m_price; }
+
+double elob::order::get_quantity() const { return m_quantity; }
+
+bool elob::order::is_immediate_or_cancel() const {
+	return m_immediate_or_cancel;
+}
+
+bool elob::order::is_all_or_nothing() const { return m_all_or_nothing; }
+
+bool elob::order::is_queued() const { return m_queued; }
 
 #endif // #ifndef ORDER_HPP

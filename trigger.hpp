@@ -6,6 +6,7 @@
 #include <memory>
 
 namespace elob {
+
 	class trigger_limit;
 	class book;
 
@@ -29,12 +30,12 @@ namespace elob {
 		bool m_queued = false;
 
 		/* pointer to the book into which the order was inserted.
-		 it's guaranteed to be dereferencable in the virtual event
-		 methods. */
+			it's guaranteed to be dereferencable in the virtual
+		   event methods. */
 		book *m_book = nullptr;
 
 		/* these iterators store the location of the order in the order
-		 book. They are used to cancel the order in O(1). */
+			book. They are used to cancel the order in O(1). */
 		std::map<double, elob::trigger_limit>::iterator m_limit_it;
 		std::list<std::shared_ptr<trigger>>::iterator m_trigger_it;
 
@@ -82,21 +83,21 @@ namespace elob {
 		 *
 		 * @return double price of the order.
 		 */
-		inline double get_price() const { return m_price; }
+		inline double get_price() const;
 
 		/**
 		 * @brief Update the price of the trigger.
 		 *
 		 * @param t_price, the new price of the trigger.
 		 */
-		void set_price(double t_price);
+		inline void set_price(double t_price);
 
 		/**
 		 * @brief Get the side of the trigger.
 		 *
 		 * @return either elob::side::bid or elob::side:ask
 		 */
-		inline side get_side() const { return m_side; }
+		inline side get_side() const;
 
 		/**
 		 * @brief Construct a new trigger object
@@ -110,37 +111,98 @@ namespace elob {
 		trigger(side t_side, double t_price);
 
 		/**
-		 * @brief Get the instance of the book into which the TRIGGER was
-		 * inserted. This value is guaranteed to be non-nullptr in the
-		 * virtual event methods.
+		 * @brief Get the instance of the book into which the TRIGGER
+		 * was inserted. This value is guaranteed to be non-nullptr in
+		 * the virtual event methods.
 		 *
-		 * @return book* pointer to the book object into which the TRIGGER
-		 * was inserted or nullptr if it hasn't been inserted into a
-		 * book yet or got removed from it.
+		 * @return book* pointer to the book object into which the
+		 * TRIGGER was inserted or nullptr if it hasn't been inserted
+		 * into a book yet or got removed from it.
 		 */
-		book *get_book() const { return m_book; }
+		inline book *get_book() const;
 
 		/**
-		 * @brief Cancels the TRIGGER, if possible. Currently, only queued
-		 * triggers can be canceled.
+		 * @brief Cancels the TRIGGER, if possible. Currently, only
+		 * queued triggers can be canceled.
 		 *
 		 * @return true successfully cancelled.
 		 * @return false could not cancel the trigger because it hasn't
 		 * been queued yet.
 		 */
-		bool cancel();
+		inline bool cancel();
 
 		/**
-		 * @brief Check whether the tigger is queued. Queued triggers can be canceled.
-		 * 
+		 * @brief Check whether the tigger is queued. Queued triggers
+		 * can be canceled.
+		 *
 		 * @return true, the trigger is queued.
 		 * @return false, the trigger is not queued.
 		 */
-		inline bool is_queued() const { return m_queued; }
+		inline bool is_queued() const;
 
 		friend book;
 		friend trigger_limit;
 	};
 } // namespace elob
+
+#include "book.hpp"
+#include "trigger_limit.hpp"
+
+elob::trigger::trigger(elob::side t_side, double t_price)
+    : m_side(t_side), m_price(t_price) {}
+
+bool elob::trigger::cancel() {
+	if (m_queued) {
+
+		m_limit_it->second.erase(m_trigger_it);
+
+		if (m_limit_it->second.is_empty()) {
+			if (m_side == side::bid) {
+				m_book->m_bid_triggers.erase(m_limit_it);
+			} else {
+				m_book->m_ask_triggers.erase(m_limit_it);
+			}
+		}
+
+		on_canceled();
+
+		if (!m_queued) { // on_canceled may reinsert the trigger
+			m_book = nullptr;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+void elob::trigger::set_price(double t_price) {
+	if (m_price == t_price) {
+		return;
+	}
+
+	if (m_queued) {
+		m_limit_it->second.erase(m_trigger_it);
+
+		if (m_limit_it->second.is_empty()) {
+			if (m_side == side::bid) {
+				m_book->m_bid_triggers.erase(m_limit_it);
+			} else {
+				m_book->m_ask_triggers.erase(m_limit_it);
+			}
+		}
+	}
+
+	m_price = t_price;
+	m_book->insert(shared_from_this());
+}
+
+double elob::trigger::get_price() const { return m_price; }
+
+elob::side elob::trigger::get_side() const { return m_side; }
+
+elob::book *elob::trigger::get_book() const { return m_book; }
+
+bool elob::trigger::is_queued() const { return m_queued; }
 
 #endif // #ifndef TRIGGER_HPP
