@@ -138,7 +138,7 @@ class book {
 	 *
 	 * @param t_trigger the trigger to be inserted
 	 */
-	inline void insert(elob::c_trigger_ptr t_trigger);
+	inline void insert(c_trigger_ptr t_trigger);
 
 	/**
 	 * @brief Get the best bid price.

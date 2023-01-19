@@ -2,7 +2,6 @@
 #define STOP_HPP
 #include "order.hpp"
 #include "trigger.hpp"
-#include <memory>
 
 namespace elob {
 
