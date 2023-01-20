@@ -16,15 +16,12 @@ This C++ implementation boasts a user friendly, efficient, yet highly customizab
 - stop orders
 - trailing stop orders with relative or absolute offset.
 
-This engine provides two key building blocks called "trigger" and "order" which can be combined to easily implement complicated, custom order types or even entire trading strategies.
-
-
 ## Implementation
 
 The matching engine is implemented in modern C++ (version 11 or higher) and has no external dependencies. 
 
 ### Orders and triggers
-The matching engine is based on two main building blocks, "orders" and "triggers", that can be combined and customized to form nearly any conceivable order type.
+There are two main building blocks: "orders" and "triggers", that can be combined and customized to form nearly any conceivable order type.
 
 **Orders** are simply limit orders that are defined by their side (bid/ask), price, quantity, immediate-or-cancel flag, and all-or-nothing flag. Additionally, orders implement five customizable event handlers: on_accepted, on_rejected, on_traded, on_queued, and on_cancelled. 
 
@@ -39,120 +36,3 @@ The code is designed with the following principles in mind:
 1. **simplicity over performance**: e.g. every order type is elegantly represented as a "trigger" object, "order" object, or combination thereof. This greatly simplifies the implementation of complicated order types such as traling stop orders.
 
 Nevertheless, you can expect the matching engine to handle over a million standard limit/market order executions per second on standard hardware thanks to the low time-complexity of order and trigger operations. However, it's important to note that the use of all-or-nothing orders and trailing stop may decrease its performance significantly. 
-
-## Examples
-### Creating, inserting and cancelling an order
-Code:
-
-```c++
-#include <iostream>
-#include <memory>
-#include "book.hpp"
-#include "order.hpp"
-
-int main(int argc, char *argv[]) {
-    auto my_book = elob::book();
-
-    auto my_order = std::make_shared<elob::order>(
-        elob::side::bid, // side
-        99.99, // price
-        100.0, // quantity
-        false, // immediate or cancel
-        false // all or nothing
-    );
-
-    my_book.insert(my_order);
-
-    // formatted output
-    std::cout << my_book << std::endl; 
-
-    // cancelling the order removes it from the book in O(1)
-    my_order->cancel();
-
-    return 0;
-}
-```
-
-Output:
-```shell
-┌─────────────────BIDS─────────────────┬─────────────────ASKS─────────────────┐
-│          PRC         QTY     AON QTY │          PRC         QTY     AON QTY │
-│        99.99         100           0 │                                      │
-```
-
-### Customizing an order to log its execution prices
-
-Code:
-```c++
-#include "book.hpp"
-#include "order.hpp"
-#include <iostream>
-#include <memory>
-
-class custom_order : virtual public elob::order {
-	public:
-
-	custom_order(const elob::side side, const double price, const double quantity)
-	    : elob::order(side, price, quantity){};
-
-	protected:
-
-    // event handler that is automatically called 
-    // when the order executed against another
-    void on_traded(c_order_ptr &other_order) override {
-		std::cout
-            << "Traded with order at price: "
-	        << other_order->get_price()
-            << std::endl;
-    }
-};
-
-int main(int argc, char *argv[]) {
-	auto my_book = elob::book();
-
-	// insert a couple ask orders for our custom order to execute against
-	for (double price = 115.0; price <= 120.0; ++price) {
-		my_book.insert(
-		    std::make_shared<elob::order>(elob::side::ask, // side
-			price, 100.0
-        ));
-	}
-
-    // output formatted book before execution
-	std::cout << my_book << std::endl;
-
-    // create and insert custom order
-	my_book.insert(std::make_shared<custom_order>(elob::side::bid, 120.0, 450.0));
-
-    // output formatted book after execution
-	std::cout << my_book << std::endl;
-
-	return 0;
-}
-```
-
-Output:
-```
-┌─────────────────BIDS─────────────────┬─────────────────ASKS─────────────────┐
-│          PRC         QTY     AON QTY │          PRC         QTY     AON QTY │
-│                                      │          115         100           0 │
-│                                      │          116         100           0 │
-│                                      │          117         100           0 │
-│                                      │          118         100           0 │
-│                                      │          119         100           0 │
-│                                      │          120         100           0 │
-
-Traded with order at price: 115
-Traded with order at price: 116
-Traded with order at price: 117
-Traded with order at price: 118
-Traded with order at price: 119
-┌─────────────────BIDS─────────────────┬─────────────────ASKS─────────────────┐
-│          PRC         QTY     AON QTY │          PRC         QTY     AON QTY │
-│                                      │          119          50           0 │
-│                                      │          120         100           0 │
-
-```
-
-
-
