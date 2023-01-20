@@ -79,7 +79,7 @@ void elob::trigger_limit::trigger_all() {
 }
 
 elob::trigger_limit::~trigger_limit() {
-	for (auto &trigger : m_triggers) {
+	for (const auto &trigger : m_triggers) {
 		trigger->m_book = nullptr;
 		trigger->m_queued = false;
 	}

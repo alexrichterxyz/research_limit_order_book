@@ -36,6 +36,7 @@ class order : public std::enable_shared_from_this<order> {
 		book. They are used to cancel the order in O(1). */
 	std::map<double, elob::order_limit>::iterator m_limit_it;
 	std::list<order_ptr>::iterator m_order_it;
+	std::list<std::list<order_ptr>::iterator>::iterator m_aon_order_its_it;
 
 	protected:
 	/**
@@ -243,20 +244,21 @@ void elob::order::set_all_or_nothing(const bool t_all_or_nothing) {
 			--order_it;
 			if ((*order_it)->m_all_or_nothing) {
 				const auto insert_at_it =
-				    ++std::find(aon_order_its.begin(),
-					aon_order_its.end(), order_it);
+				    std::next((*order_it)->m_aon_order_its_it);
 				aon_order_its.insert(insert_at_it, m_order_it);
+				m_aon_order_its_it = insert_at_it;
 				return;
 			}
 		}
 
 		m_limit_it->second.m_aon_order_its.push_back(order_it);
+		m_aon_order_its_it =
+		    std::prev(m_limit_it->second.m_aon_order_its.end());
 
 	} else { // is queued and change from true to false
 		limit_obj.m_aon_quantity -= m_quantity;
 		limit_obj.m_quantity += m_quantity;
-		aon_order_its.erase(std::find(
-		    aon_order_its.begin(), aon_order_its.end(), m_order_it));
+		aon_order_its.erase(m_aon_order_its_it);
 	}
 }
 

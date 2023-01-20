@@ -21,11 +21,7 @@ class order_limit {
 	 * they can be quickly looked up. This is neccessary because
 	 * updating order quantities may render some all-or-nothing
 	 * orders executable. When all-or-nothing orders are executed or
-	 * canceled, their iterators must be deleted from this list
-	 * which runs at O(n). This may be fixed in future versions by
-	 * storing the iterator to m_aon_order_its in the order objects.
-	 * In the meantime it is aniticipated that only few orders will
-	 * be all-or-nothing.
+	 * canceled, their iterators must be deleted from this list.
 	 */
 	std::list<std::list<order_ptr>::iterator> m_aon_order_its;
 
@@ -129,6 +125,7 @@ std::list<elob::order_ptr>::iterator elob::order_limit::insert(
 	if (t_order->m_all_or_nothing) {
 		m_aon_quantity += t_order->m_quantity;
 		m_aon_order_its.push_back(order_it);
+		t_order->m_aon_order_its_it = std::prev(m_aon_order_its.end());
 	} else {
 		m_quantity += t_order->m_quantity;
 	}
@@ -141,9 +138,7 @@ void elob::order_limit::erase(
 	auto &order_obj = *t_order_it;
 
 	if (order_obj->m_all_or_nothing) {
-		// todo: improve algo to avoid linear time complexity
-		m_aon_order_its.erase(std::find(m_aon_order_its.begin(),
-		    m_aon_order_its.end(), t_order_it));
+		m_aon_order_its.erase(order_obj->m_aon_order_its_it);
 		// avoid floating point issues
 		m_aon_quantity -= order_obj->m_quantity;
 	} else {
