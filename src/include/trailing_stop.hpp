@@ -27,8 +27,8 @@ template <class order_t> class trailing_stop : virtual public trigger {
 	inline const std::shared_ptr<order_t> &get_pending_order() const;
 };
 
-typedef trailing_stop<order> trailing_stop_order;
-typedef trailing_stop<trigger> trailing_stop_trigger;
+using trailing_stop_order = trailing_stop<order>;
+using trailing_stop_trigger = trailing_stop<trigger>;
 
 class trailing_stop_controller : virtual public trigger {
 	private:
@@ -37,10 +37,12 @@ class trailing_stop_controller : virtual public trigger {
 	trigger &m_trailing_stop;
 	void on_triggered() override;
 
-	public:
 	trailing_stop_controller(const side t_side, const double t_price,
 	    const offset_type t_offset_type, const double t_offset,
 	    trigger &t_trailing_stop_order);
+
+	friend trailing_stop_order;
+	friend trailing_stop_trigger;
 };
 } // namespace elob
 
