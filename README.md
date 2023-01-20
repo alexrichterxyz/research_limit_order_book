@@ -1,6 +1,10 @@
 # An extendable C++ limit order book for research purposes 
 ![Under development, do not use!](https://img.shields.io/badge/⚠%EF%B8%8F-Under%20development%2C%20do%20not%20use!-critical?style=for-the-badge)
 
+Feel free to reach out to me if you are not a bot
+
+📧 alexander.richter @ sydney.edu.au
+
 ## Overview
 A matching engine is the software that executes orders on a financial exchange. This project contains a price-time-priority matching engine -the type most securities markets operate on. 
 
