@@ -1,4 +1,4 @@
 #!
-rm -f src/test/test.out
-g++ -Ofast -Wall -std=c++20 src/test/main.cpp -o src/test/test.out
-./src/test/test.out
+rm -f test/test.out
+g++ -Ofast -Wall -std=c++20 test/main.cpp -o test/test.out
+./test/test.out

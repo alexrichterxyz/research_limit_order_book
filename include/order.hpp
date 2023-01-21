@@ -231,9 +231,10 @@ void elob::order::set_all_or_nothing(const bool t_all_or_nothing) {
 	auto &limit_obj = m_limit_it->second;
 	auto &aon_order_its = limit_obj.m_aon_order_its;
 
-	if (t_all_or_nothing) { // is queued and change from false to true
-		// to ensure price-TIME priority, one needs to find the orevious
-		// occurence in m_aon_order_its
+	if (t_all_or_nothing) { // is queued and change from false to
+				// true
+		// to ensure price-TIME priority, one needs to find the
+		// orevious occurence in m_aon_order_its
 		limit_obj.m_aon_quantity += m_quantity;
 		limit_obj.m_quantity -= m_quantity;
 
