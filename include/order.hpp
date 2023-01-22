@@ -280,64 +280,87 @@ void elob::order::set_quantity(const double t_quantity) {
 		m_limit_it->second.m_aon_quantity += t_quantity - m_quantity;
 		m_quantity = t_quantity;
 
-		if (t_quantity <= m_quantity) { // decrease quantity
+		if (m_side == side::bid &&
+		    m_book->bid_is_fillable(*m_order_it)) {
 
 			// attempt to execute itself against all orders
-			if (m_side == side::bid &&
-			    m_book->bid_is_fillable(*m_order_it)) {
+			// todo remove itself from aon queue
+			m_book->begin_order_deferral();
+			m_book->execute_queued_bid(*m_order_it);
+			m_book->end_order_deferral();
+			m_limit_it->second.erase(m_order_it);
+			m_limit_it->second.m_aon_order_its.erase(
+			    m_aon_order_its_it);
 
-				// todo remove from aon queue
-				m_book->begin_order_deferral();
-				m_book->execute_queued_aon_bid(*m_order_it);
+			if (m_limit_it->second.is_empty()) {
+				m_book->m_bids.erase(m_limit_it);
+			}
+
+			m_book = nullptr;
+
+			m_book->begin_order_deferral();
+			m_book->check_ask_aons(m_price);
+			m_book->end_order_deferral();
+		} else if (m_side == side::ask &&
+			   m_book->ask_is_fillable(*m_order_it)) {
+
+			m_book->begin_order_deferral();
+			m_book->execute_queued_ask(*m_order_it);
+			m_book->end_order_deferral();
+			m_limit_it->second.erase(m_order_it);
+			m_limit_it->second.m_aon_order_its.erase(
+			    m_aon_order_its_it);
+
+			if (m_limit_it->second.is_empty()) {
+				m_book->m_asks.erase(m_limit_it);
+			}
+
+			m_book = nullptr;
+
+			m_book->begin_order_deferral();
+			m_book->check_bid_aons(m_price);
+			m_book->end_order_deferral();
+		}
+
+	} else { // good til canceled
+		m_limit_it->second.m_quantity += t_quantity - m_quantity;
+		m_quantity = t_quantity;
+
+		if (m_side == side::bid) {
+			m_book->begin_order_deferral();
+			m_book->execute_queued_bid(*m_order_it);
+			m_book->end_order_deferral();
+
+			if (m_quantity <= 0.0) {
 				m_limit_it->second.erase(m_order_it);
 
 				if (m_limit_it->second.is_empty()) {
 					m_book->m_bids.erase(m_limit_it);
 				}
 
-				m_book->end_order_deferral();
-
 				m_book = nullptr;
-			} else if (m_side == side::ask &&
-				   m_book->ask_is_fillable(*m_order_it)) {
-				m_book->begin_order_deferral();
-				m_book->execute_queued_aon_ask(*m_order_it);
-				m_limit_it->second.erase(
-				    m_order_it); // todo remove from aon queue
+			}
+
+			m_book->begin_order_deferral();
+			m_book->check_ask_aons(m_price);
+			m_book->end_order_deferral();
+		} else { // is ask
+			m_book->begin_order_deferral();
+			m_book->execute_queued_ask(*m_order_it);
+			m_book->end_order_deferral();
+
+			if (m_quantity <= 0.0) {
+				m_limit_it->second.erase(m_order_it);
 
 				if (m_limit_it->second.is_empty()) {
 					m_book->m_asks.erase(m_limit_it);
 				}
 
-				m_book->end_order_deferral();
 				m_book = nullptr;
 			}
 
-		} else { // increase quantity
-			// attempt to execute AON orders on other side
 			m_book->begin_order_deferral();
-			if (m_side == side::bid) {
-				m_book->check_ask_aons(m_price);
-			} else {
-				m_book->check_bid_aons(m_price);
-			}
-			m_book->end_order_deferral();
-		}
-
-	} else {
-		m_limit_it->second.m_quantity += t_quantity - m_quantity;
-		m_quantity = t_quantity;
-
-		if (t_quantity <= m_quantity) { // decrease quantity
-						// nothing happens
-		} else {
-			// attempt to execute AON orders on other side
-			m_book->begin_order_deferral();
-			if (m_side == side::bid) {
-				m_book->check_ask_aons(m_price);
-			} else {
-				m_book->check_bid_aons(m_price);
-			}
+			m_book->check_bid_aons(m_price);
 			m_book->end_order_deferral();
 		}
 	}

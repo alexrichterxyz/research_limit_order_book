@@ -89,8 +89,8 @@ class book {
 	inline void execute_bid(c_order_ptr &t_order);
 	inline void execute_ask(c_order_ptr &t_order);
 
-	inline void execute_queued_aon_bid(c_order_ptr &t_order);
-	inline void execute_queued_aon_ask(c_order_ptr &t_order);
+	inline void execute_queued_bid(c_order_ptr &t_order);
+	inline void execute_queued_ask(c_order_ptr &t_order);
 
 	inline void queue_bid_order(c_order_ptr &t_order);
 	inline void queue_ask_order(c_order_ptr &t_order);
@@ -390,9 +390,7 @@ void elob::book::queue_bid_order(elob::c_order_ptr &t_order) {
 	t_order->m_limit_it = limit_it;
 	t_order->m_order_it = order_it;
 	t_order->m_queued = true;
-	check_ask_aons(
-	    t_order
-		->m_price); // check if any aons on other side can execute now
+	check_ask_aons(t_order->m_price);
 	t_order->on_queued();
 }
 
@@ -403,9 +401,7 @@ void elob::book::queue_ask_order(elob::c_order_ptr &t_order) {
 	t_order->m_limit_it = limit_it;
 	t_order->m_order_it = order_it;
 	t_order->m_queued = true;
-	check_bid_aons(
-	    t_order
-		->m_price); // check if any aons on other side can execute now
+	check_bid_aons(t_order->m_price);
 	t_order->on_queued();
 }
 
@@ -599,30 +595,28 @@ void elob::book::execute_ask(elob::c_order_ptr &t_order) {
 	m_bid_triggers.erase(m_bid_triggers.begin(), trigger_limit_it);
 }
 
-void elob::book::execute_queued_aon_bid(elob::c_order_ptr &t_order) {
+void elob::book::execute_queued_bid(elob::c_order_ptr &t_order) {
 	const double quantity = t_order->m_quantity;
 	execute_bid(t_order);
-
 	t_order->m_limit_it->second.m_aon_quantity -= quantity;
 }
 
-void elob::book::execute_queued_aon_ask(elob::c_order_ptr &t_order) {
+void elob::book::execute_queued_ask(elob::c_order_ptr &t_order) {
 	const double quantity = t_order->m_quantity;
 	execute_ask(t_order);
-
 	t_order->m_limit_it->second.m_aon_quantity -= quantity;
 }
 
 void elob::book::check_bid_aons(const double t_price) {
 	auto limit_it = m_bids.lower_bound(t_price);
 
-	while (limit_it != m_bids.end()) { // todo check if limit is removed
+	while (limit_it != m_bids.end()) {
 		auto &limit_obj = limit_it->second;
 		auto order_it = limit_obj.m_aon_order_its.begin();
 		while (order_it != limit_obj.m_aon_order_its.end()) {
 			auto order_obj = **order_it;
 			if (bid_is_fillable(order_obj)) {
-				execute_queued_aon_bid(order_obj);
+				execute_queued_bid(order_obj);
 				limit_obj.erase(*(order_it++));
 			} else {
 				++order_it;
@@ -639,14 +633,13 @@ void elob::book::check_bid_aons(const double t_price) {
 
 void elob::book::check_ask_aons(const double t_price) {
 	auto limit_it = m_asks.lower_bound(t_price);
-
-	while (limit_it != m_asks.end()) { // todo check if limit is removed
+	while (limit_it != m_asks.end()) {
 		auto &limit_obj = limit_it->second;
 		auto order_it = limit_obj.m_aon_order_its.begin();
 		while (order_it != limit_obj.m_aon_order_its.end()) {
 			auto order_obj = **order_it;
 			if (ask_is_fillable(order_obj)) {
-				execute_queued_aon_ask(order_obj);
+				execute_queued_ask(order_obj);
 				limit_obj.erase(*(order_it++));
 			} else {
 				++order_it;
