@@ -21,7 +21,7 @@ This C++ implementation boasts a user friendly, efficient, yet highly customizab
 
 ## Implementation
 
-The matching engine is implemented in modern C++ (version 11 or higher) and has no external dependencies. 
+The matching engine is implemented in modern C++ (version 14 or higher) and has no external dependencies. 
 
 ### Orders and triggers
 There are two main building blocks: "orders" and "triggers", that can be combined and customized to form nearly any conceivable order type.
