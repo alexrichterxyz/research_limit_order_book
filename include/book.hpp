@@ -12,6 +12,7 @@ class order_limit;
 class trigger_limit;
 class trigger;
 class order;
+class insertable;
 
 std::ostream &operator<<(std::ostream &t_os, const book &t_book);
 
@@ -140,6 +141,8 @@ class book {
 	 */
 	inline void insert(c_trigger_ptr t_trigger);
 
+	inline void insert(const insertable &ins);
+
 	/**
 	 * @brief Get the best bid price.
 	 *
@@ -225,6 +228,7 @@ class book {
 } // namespace elob
 
 #include "common.hpp"
+#include "insertable.hpp"
 #include "order.hpp"
 #include "order_limit.hpp"
 #include "trigger.hpp"
@@ -358,6 +362,15 @@ void elob::book::insert(elob::c_trigger_ptr t_trigger) {
 		} else {
 			queue_ask_trigger(t_trigger);
 		}
+	}
+}
+
+void elob::book::insert(const insertable &ins) {
+
+	if (ins.is_order()) {
+		insert(*(ins.get_order()));
+	} else {
+		insert(*(ins.get_trigger()));
 	}
 }
 

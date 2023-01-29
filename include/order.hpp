@@ -1,11 +1,13 @@
 #ifndef ORDER_HPP
 #define ORDER_HPP
+#include "common.hpp"
 #include <list>
 #include <map>
 #include <memory>
 
 namespace elob {
 
+class order_limit;
 class book;
 
 /**
@@ -187,7 +189,6 @@ class order : public std::enable_shared_from_this<order> {
 } // namespace elob
 
 #include "book.hpp"
-#include "common.hpp"
 #include "order_limit.hpp"
 #include <algorithm>
 
