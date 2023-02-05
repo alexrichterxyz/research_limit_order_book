@@ -25,7 +25,7 @@ class trigger_limit {
 	 * @return std::list<elob::trigger_ptr>::iterator,
 	 * iterator to first trigger in the queue.
 	 */
-	inline std::list<trigger_ptr>::iterator triggers_begin();
+	inline std::list<trigger_ptr>::iterator begin();
 
 	/**
 	 * @brief Get an iterator to the end of the trigger queue.
@@ -33,7 +33,7 @@ class trigger_limit {
 	 * @return std::list<elob::trigger_ptr>::iterator,
 	 * iterator to the end of the trigger queue.
 	 */
-	inline std::list<trigger_ptr>::iterator triggers_end();
+	inline std::list<trigger_ptr>::iterator end();
 
 	/**
 	 * @brief Get the number of triggers at this price level.
@@ -85,12 +85,11 @@ elob::trigger_limit::~trigger_limit() {
 	}
 }
 
-std::list<elob::trigger_ptr>::iterator elob::trigger_limit::triggers_begin() {
+std::list<elob::trigger_ptr>::iterator elob::trigger_limit::begin() {
 	return m_triggers.begin();
 }
 
-inline std::list<elob::trigger_ptr>::iterator
-elob::trigger_limit::triggers_end() {
+inline std::list<elob::trigger_ptr>::iterator elob::trigger_limit::end() {
 	return m_triggers.end();
 }
 

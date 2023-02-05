@@ -1,6 +1,7 @@
 #ifndef BOOK_HPP
 #define BOOK_HPP
 #include "common.hpp"
+#include "insertable_iterator.hpp"
 #include <map>
 #include <memory>
 #include <queue>
@@ -13,6 +14,12 @@ class trigger_limit;
 class trigger;
 class order;
 class insertable;
+
+using bid_order_iterator = elob::insertable_iterator<std::greater<double>,
+    elob::order_limit, std::shared_ptr<elob::order>>;
+
+using ask_order_iterator = elob::insertable_iterator<std::less<double>,
+    elob::order_limit, std::shared_ptr<elob::order>>;
 
 std::ostream &operator<<(std::ostream &t_os, const book &t_book);
 
@@ -170,7 +177,7 @@ class book {
 	 * @return std::map<double, order_limit>::iterator bid begin
 	 * iterator
 	 */
-	inline std::map<double, order_limit>::iterator bid_limit_begin();
+	inline std::map<double, order_limit>::iterator bid_limits_begin();
 
 	/**
 	 * @brief Get an iterator to the first ask price level
@@ -178,7 +185,7 @@ class book {
 	 * @return std::map<double, order_limit>::iterator ask begin
 	 * iterator
 	 */
-	inline std::map<double, order_limit>::iterator ask_limit_begin();
+	inline std::map<double, order_limit>::iterator ask_limits_begin();
 
 	/**
 	 * @brief Get an iterator to the end of the bids
@@ -186,7 +193,7 @@ class book {
 	 * @return std::map<double, order_limit>::iterator bid price
 	 * level end iterator
 	 */
-	inline std::map<double, order_limit>::iterator bid_limit_end();
+	inline std::map<double, order_limit>::iterator bid_limits_end();
 
 	/**
 	 * @brief Get an iterator to the end of the asks
@@ -194,14 +201,14 @@ class book {
 	 * @return std::map<double, order_limit>::iterator ask price
 	 * level end iterator
 	 */
-	inline std::map<double, order_limit>::iterator ask_limit_end();
+	inline std::map<double, order_limit>::iterator ask_limits_end();
 
 	/**
 	 * @brief Get bid price limit at specified price
 	 *
 	 * @param t_price the price of the bid limit
 	 * @return std::map<double, order_limit>::iterator the bid price
-	 * limit. Equals bid_limit_end() if this price limit does not
+	 * limit. Equals bid_limits_end() if this price limit does not
 	 * exist.
 	 */
 	inline std::map<double, order_limit>::iterator bid_limit_at(
@@ -212,11 +219,41 @@ class book {
 	 *
 	 * @param t_price the price of the ask limit
 	 * @return std::map<double, order_limit>::iterator the ask price
-	 * limit. Equals ask_limit_end() if this price limit does not
+	 * limit. Equals ask_limits_end() if this price limit does not
 	 * exist.
 	 */
 	inline std::map<double, order_limit>::iterator ask_limit_at(
 	    const double t_price);
+
+	/**
+	 * @brief Get iterator to first order pointer at first
+	 * price limit on bid side
+	 *
+	 * @return bid_order_iterator to order pointer
+	 */
+	inline bid_order_iterator bid_orders_begin();
+
+	/**
+	 * @brief Get iterator to first order pointer at first
+	 * price limit on ask side
+	 *
+	 * @return ask_order_iterator to order pointer
+	 */
+	inline ask_order_iterator ask_orders_begin();
+
+	/**
+	 * @brief Get iterator to past-the-end order pointer on bid side
+	 *
+	 * @return bid_order_iterator iterator to past-the-end order pointer
+	 */
+	inline bid_order_iterator bid_orders_end();
+
+	/**
+	 * @brief Get iterator to past-the-end order pointer on ask side
+	 *
+	 * @return ask_order_iterator iterator to past-the-end order pointer
+	 */
+	inline ask_order_iterator ask_orders_end();
 
 	~book();
 
@@ -229,6 +266,7 @@ class book {
 
 #include "common.hpp"
 #include "insertable.hpp"
+#include "insertable_iterator.hpp"
 #include "order.hpp"
 #include "order_limit.hpp"
 #include "trigger.hpp"
@@ -679,19 +717,19 @@ double elob::book::get_ask_price() const {
 
 double elob::book::get_market_price() const { return m_market_price; }
 
-std::map<double, elob::order_limit>::iterator elob::book::bid_limit_begin() {
+std::map<double, elob::order_limit>::iterator elob::book::bid_limits_begin() {
 	return m_bids.begin();
 }
 
-std::map<double, elob::order_limit>::iterator elob::book::ask_limit_begin() {
+std::map<double, elob::order_limit>::iterator elob::book::ask_limits_begin() {
 	return m_asks.begin();
 }
 
-std::map<double, elob::order_limit>::iterator elob::book::bid_limit_end() {
+std::map<double, elob::order_limit>::iterator elob::book::bid_limits_end() {
 	return m_bids.end();
 }
 
-std::map<double, elob::order_limit>::iterator elob::book::ask_limit_end() {
+std::map<double, elob::order_limit>::iterator elob::book::ask_limits_end() {
 	return m_asks.end();
 }
 
@@ -703,6 +741,24 @@ std::map<double, elob::order_limit>::iterator elob::book::bid_limit_at(
 std::map<double, elob::order_limit>::iterator elob::book::ask_limit_at(
     const double t_price) {
 	return m_asks.find(t_price);
+}
+
+elob::bid_order_iterator elob::book::bid_orders_begin() {
+	return elob::bid_order_iterator(
+	    m_bids, m_bids.begin(), m_bids.begin()->second.begin());
+}
+
+elob::ask_order_iterator elob::book::ask_orders_begin() {
+	return elob::ask_order_iterator(
+	    m_asks, m_asks.begin(), m_asks.begin()->second.begin());
+}
+
+elob::bid_order_iterator elob::book::bid_orders_end() {
+	return elob::bid_order_iterator(m_bids, m_bids.end());
+}
+
+elob::ask_order_iterator elob::book::ask_orders_end() {
+	return elob::ask_order_iterator(m_asks, m_asks.end());
 }
 
 elob::book::~book() {

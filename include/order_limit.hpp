@@ -78,7 +78,7 @@ class order_limit {
 	 * @return std::list<elob::order_ptr>::iterator, iterator
 	 * to first order in the queue.
 	 */
-	inline std::list<order_ptr>::iterator orders_begin();
+	inline std::list<order_ptr>::iterator begin();
 
 	/**
 	 * @brief Get an iterator to the end of the order queue.
@@ -86,7 +86,7 @@ class order_limit {
 	 * @return std::list<elob::order_ptr>::iterator, iterator
 	 * to the end of the order queue.
 	 */
-	inline std::list<order_ptr>::iterator orders_end();
+	inline std::list<order_ptr>::iterator end();
 
 	/**
 	 * @brief Get the number of orders (including all-or-nothing) at
@@ -224,11 +224,11 @@ std::size_t elob::order_limit::get_order_count() const {
 	return m_orders.size();
 }
 
-std::list<elob::order_ptr>::iterator elob::order_limit::orders_begin() {
+std::list<elob::order_ptr>::iterator elob::order_limit::begin() {
 	return m_orders.begin();
 }
 
-std::list<elob::order_ptr>::iterator elob::order_limit::orders_end() {
+std::list<elob::order_ptr>::iterator elob::order_limit::end() {
 	return m_orders.end();
 }
 
