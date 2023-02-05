@@ -127,6 +127,9 @@ class book {
 	inline void check_ask_aons(const double t_price);
 
 	public:
+	template <class T, class... Args>
+	inline std::shared_ptr<T> insert(Args &&...args);
+
 	/**
 	 * @brief Inserts an order into the book. Marketable orders will
 	 * be executed. Partially filled orders will be queued (or
@@ -319,6 +322,13 @@ std::ostream &elob::operator<<(std::ostream &t_os, const elob::book &t_book) {
 	}
 
 	return t_os;
+}
+
+template <class T, class... Args>
+std::shared_ptr<T> elob::book::insert(Args &&...args) {
+	auto ptr = std::make_shared<T>(std::forward<Args>(args)...);
+	insert(ptr);
+	return ptr;
 }
 
 void elob::book::insert(elob::c_order_ptr t_order) {
