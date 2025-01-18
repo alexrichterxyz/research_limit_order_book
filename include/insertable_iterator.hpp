@@ -11,19 +11,19 @@ template <class Cmp, class Lim, class Ins> class insertable_iterator {
 	typename std::map<double, Lim, Cmp>::iterator m_limit_it;
 	typename std::list<Ins>::iterator m_insertable_it;
 
-	insertable_iterator(std::map<double, Lim, Cmp> &side,
-	    const typename std::map<double, Lim, Cmp>::iterator &limit_it,
-	    const typename std::list<Ins>::iterator &insertable_it);
+	insertable_iterator(std::map<double, Lim, Cmp> &t_side,
+	    const typename std::map<double, Lim, Cmp>::iterator &t_limit_it,
+	    const typename std::list<Ins>::iterator &t_insertable_it);
 
-	insertable_iterator(std::map<double, Lim, Cmp> &side,
-	    const typename std::map<double, Lim, Cmp>::iterator &limit_it);
+	insertable_iterator(std::map<double, Lim, Cmp> &t_side,
+	    const typename std::map<double, Lim, Cmp>::iterator &t_limit_it);
 
 	public:
-	insertable_iterator(const insertable_iterator &other);
+	insertable_iterator(const insertable_iterator &t_other);
 
-	bool operator==(const insertable_iterator &other);
+	bool operator==(const insertable_iterator &t_other);
 
-	bool operator!=(const insertable_iterator &other);
+	bool operator!=(const insertable_iterator &t_other);
 
 	insertable_iterator<Cmp, Lim, Ins> operator++();
 	insertable_iterator<Cmp, Lim, Ins> operator++(int);
@@ -41,26 +41,26 @@ template <class Cmp, class Lim, class Ins> class insertable_iterator {
 
 template <class Cmp, class Lim, class Ins>
 elob::insertable_iterator<Cmp, Lim, Ins>::insertable_iterator(
-    std::map<double, Lim, Cmp> &side,
-    const typename std::map<double, Lim, Cmp>::iterator &limit_it,
-    const typename std::list<Ins>::iterator &insertable_it)
-    : m_side(side), m_limit_it(limit_it), m_insertable_it(insertable_it) {}
+    std::map<double, Lim, Cmp> &t_side,
+    const typename std::map<double, Lim, Cmp>::iterator &t_limit_it,
+    const typename std::list<Ins>::iterator &t_insertable_it)
+    : m_side(t_side), m_limit_it(t_limit_it), m_insertable_it(t_insertable_it) {}
 
 template <class Cmp, class Lim, class Ins>
 elob::insertable_iterator<Cmp, Lim, Ins>::insertable_iterator(
-    std::map<double, Lim, Cmp> &side,
-    const typename std::map<double, Lim, Cmp>::iterator &limit_it)
-    : m_side(side), m_limit_it(limit_it) {}
+    std::map<double, Lim, Cmp> &t_side,
+    const typename std::map<double, Lim, Cmp>::iterator &t_limit_it)
+    : m_side(t_side), m_limit_it(t_limit_it) {}
 
 template <class Cmp, class Lim, class Ins>
 elob::insertable_iterator<Cmp, Lim, Ins>::insertable_iterator(
-    const insertable_iterator<Cmp, Lim, Ins> &other)
-    : m_side(other.m_side), m_limit_it(other.m_limit_it),
-      m_insertable_it(other.m_insertable_it) {}
+    const insertable_iterator<Cmp, Lim, Ins> &t_other)
+    : m_side(t_other.m_side), m_limit_it(t_other.m_limit_it),
+      m_insertable_it(t_other.m_insertable_it) {}
 
 template <class Cmp, class Lim, class Ins>
 bool elob::insertable_iterator<Cmp, Lim, Ins>::operator==(
-    const insertable_iterator<Cmp, Lim, Ins> &other) {
+    const insertable_iterator<Cmp, Lim, Ins> &t_other) {
 
 	// do not check insertable iterator if limit iterator is end
 	if (m_side.end() == m_limit_it) {
@@ -68,14 +68,14 @@ bool elob::insertable_iterator<Cmp, Lim, Ins>::operator==(
 	}
 
 	// if not end, checking the insertable iterator is sufficient
-	return m_insertable_it == other.m_insertable_it;
+	return m_insertable_it == t_other.m_insertable_it;
 }
 
 template <class Cmp, class Lim, class Ins>
 bool elob::insertable_iterator<Cmp, Lim, Ins>::operator!=(
-    const insertable_iterator<Cmp, Lim, Ins> &other) {
+    const insertable_iterator<Cmp, Lim, Ins> &t_other) {
 
-	return !(*this == other);
+	return !(*this == t_other);
 }
 
 template <class Cmp, class Lim, class Ins>
